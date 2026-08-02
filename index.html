@@ -268,6 +268,16 @@ svg {
   justify-content: center;
 }
 
+/* Mobile: the frame is a passthrough; the phone is full-bleed. */
+.frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .phone {
   position: relative;
   width: 100%;
@@ -279,38 +289,80 @@ svg {
   flex-direction: column;
 }
 
-/* Desktop: bezel-framed phone */
-@media (min-width: 720px) and (min-height: 780px) {
+.hw-btn,
+.island {
+  display: none;
+}
+
+/* Desktop: realistic hardware-framed iPhone, scaled to fill the viewport
+   (aspect ratio locked; --phone-scale set by app.js on resize). */
+@media (min-width: 720px) and (min-height: 640px) {
   body {
+    overflow: hidden;
     background:
       radial-gradient(1200px 700px at 70% -10%, var(--sky-soft), transparent 60%),
       var(--bg);
+  }
+  .frame {
+    flex: none;
+    width: 412px;
+    height: 866px;
+    padding: 11px;
+    border-radius: 64px;
+    background: linear-gradient(150deg, #48484e, #232327 34%, #1a1a1d 62%, #3c3c42);
+    box-shadow:
+      inset 0 0 0 1.5px rgba(255, 255, 255, 0.14),
+      inset 0 0 0 7px #0a0a0b,
+      0 42px 90px rgba(15, 20, 28, 0.45),
+      0 12px 30px rgba(15, 20, 28, 0.3);
+    transform: scale(var(--phone-scale, 1));
+    transform-origin: center center;
   }
   .phone {
     width: 390px;
     height: 844px;
     max-width: none;
-    border-radius: 48px;
-    border: 1px solid var(--line-strong);
-    box-shadow: var(--shadow-float);
-  }
-  .phone::after {
-    /* bezel notch hint */
-    content: "";
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 118px;
-    height: 30px;
-    border-radius: 15px;
-    background: #0a0a0a;
-    z-index: 60;
-    pointer-events: none;
+    border-radius: 53px;
   }
   .phone .statusbar {
-    padding-top: 14px;
+    padding-top: 17px;
   }
+
+  /* dynamic island */
+  .island {
+    display: flex;
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 122px;
+    height: 35px;
+    border-radius: 20px;
+    background: #050506;
+    z-index: 60;
+    pointer-events: none;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 11px;
+  }
+  .island i {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 32%, #24303e, #0a0d12 72%);
+  }
+
+  /* hardware buttons */
+  .hw-btn {
+    display: block;
+    position: absolute;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #2a2a2e, #56565e 45%, #2a2a2e);
+  }
+  .hw-action { left: -2.5px; top: 178px; width: 4px; height: 30px; }
+  .hw-vol-up { left: -2.5px; top: 238px; width: 4px; height: 58px; }
+  .hw-vol-down { left: -2.5px; top: 308px; width: 4px; height: 58px; }
+  .hw-power { right: -2.5px; top: 272px; width: 4px; height: 92px; }
 }
 
 /* ---------- status bar ---------- */
@@ -345,23 +397,27 @@ svg {
 .screen {
   position: absolute;
   inset: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background: var(--bg);
 }
 
-.screen::-webkit-scrollbar {
-  display: none;
-}
-
+/* The body is the scroller, so the dock / detail bar (absolute in .screen)
+   and any header above the body stay pinned while content scrolls. */
 .screen-body {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   padding: 0 var(--gutter);
   padding-bottom: 140px;
+}
+
+.screen-body::-webkit-scrollbar {
+  display: none;
 }
 
 /* push/pop transitions */
@@ -1346,26 +1402,105 @@ svg {
 
 /* ---------- feedback ---------- */
 
-.fb-chip {
-  position: absolute;
-  right: 14px;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 104px);
-  z-index: 64;
+/* Trigger tab lives OUTSIDE the phone frame, on the viewport edge. */
+.fb-tab {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 200;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 9px 14px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+  gap: 7px;
+  padding: 13px 7px 14px;
+  border-radius: 11px 0 0 11px;
+  background: color-mix(in srgb, var(--surface-1) 90%, transparent);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   border: 0.5px solid var(--line-strong);
+  border-right: 0;
   box-shadow: var(--shadow-card);
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 650;
-  color: var(--text-2);
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  transition: color 160ms ease, transform 200ms var(--ease-spring);
 }
-.fb-chip svg { width: 14px; height: 14px; color: var(--sky); }
+.fb-tab:hover { color: var(--text-1); transform: translateY(-50%) translateX(-2px); }
+.fb-tab svg { width: 14px; height: 14px; color: var(--sky); }
+.fb-tab span {
+  writing-mode: vertical-rl;
+  text-transform: uppercase;
+}
+
+.fb-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  background: rgba(12, 14, 18, 0.22);
+}
+
+.fb-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(340px, 94vw);
+  z-index: 220;
+  background: var(--surface-1);
+  border-left: 0.5px solid var(--line-strong);
+  box-shadow: var(--shadow-float);
+  padding: 24px 22px calc(env(safe-area-inset-bottom, 0px) + 22px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fb-panel .fb-input { flex: none; }
+
+.fb-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fb-panel { animation: fbSlideIn 320ms var(--ease-spring) both; }
+  .fb-panel-backdrop { animation: fadeIn 240ms ease both; }
+  @keyframes fbSlideIn {
+    from { transform: translateX(60px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+}
+
+/* Mobile: slim half-tucked tab; panel rises from the bottom. */
+@media (max-width: 719px) {
+  .fb-tab {
+    top: auto;
+    bottom: 26vh;
+    transform: none;
+    padding: 11px 5px 12px;
+    opacity: 0.85;
+  }
+  .fb-tab:hover { transform: translateX(-2px); }
+  .fb-panel {
+    top: auto;
+    left: 0;
+    width: auto;
+    max-height: 72vh;
+    border-left: 0;
+    border-top: 0.5px solid var(--line-strong);
+    border-radius: 22px 22px 0 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .fb-panel { animation: fbSlideUp 340ms var(--ease-spring) both; }
+    @keyframes fbSlideUp {
+      from { transform: translateY(70px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  }
+}
 
 .fb-vote {
   display: flex;
@@ -1482,56 +1617,56 @@ svg {
 <body>
 <div id="stage"></div>
 <script>window.NOMI_FB={"url":"https://eqhokmrliqhkjtmalqkr.supabase.co","anon":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxaG9rbXJsaXFoa2p0bWFscWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNjgzMzEsImV4cCI6MjEwMDY0NDMzMX0.GyVSPuwZ7NSEqlxt0r7mWxM-PScTCa2FdcWy7ragd7s","table":"prototype_feedback"};</script>
-<script>(()=>{var X=new Map,z=[],K,re,Q=null;function p(e,t){X.set(e,t)}function ce(e){Q=e}function R(){return z[z.length-1]||null}function de(e){K=e,re=document.querySelector(".phone"),re.addEventListener("click",t=>{if(t.target.closest("[data-nav='back']")){ee();return}let a=t.target.closest("[data-go]");if(a&&!a.dataset.goHandled){let[i,n]=a.dataset.go.split(":");C(i,n)}})}function Z(e,t){let s=X.get(e.route);if(!s)return;let{html:a,onMount:i}=s.render(e.param),n=document.createElement("div");n.className=`screen enter-${t}`,n.dataset.route=e.route,n.innerHTML=a;let l=[...K.querySelectorAll(".screen")];K.appendChild(n),l.length&&setTimeout(()=>l.forEach(r=>r.remove()),380),i&&i(n),Q&&Q(e,n)}function C(e,t){let s=X.get(e);if(!s)return;if(s.sheet){s.render(t);return}let a={route:e,param:t};s.kind==="root"?(z=[a],Z(a,"fade")):(z.push(a),Z(a,s.kind==="cover"?"fade":"push"))}function ee(){z.length<=1||(z.pop(),Z(z[z.length-1],"pop"))}var d=(e,t="0 0 24 24",s=!1)=>`<svg viewBox="${t}" fill="${s?"currentColor":"none"}" ${s?"":'stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"'} aria-hidden="true">${e}</svg>`,o={house:d('<path d="M4 11l8-7 8 7v8a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 19z"/><path d="M9.6 20v-6h4.8v6"/>'),grid:d('<rect x="4" y="4" width="6.6" height="6.6" rx="1.8"/><rect x="13.4" y="4" width="6.6" height="6.6" rx="1.8"/><rect x="4" y="13.4" width="6.6" height="6.6" rx="1.8"/><rect x="13.4" y="13.4" width="6.6" height="6.6" rx="1.8"/>'),askGlyph:d('<circle cx="10.6" cy="10.6" r="6.4"/><path d="M15.4 15.4 20 20"/><path d="M10.6 7.8v0M8 10.6h5.2" stroke-width="0"/><path d="M10.6 8.2l.7 1.7 1.7.7-1.7.7-.7 1.7-.7-1.7-1.7-.7 1.7-.7z" fill="currentColor" stroke="none"/>'),mic:d('<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v2.5"/>'),waveBars:d('<path d="M4 10v4M8 7v10M12 4.5v15M16 7v10M20 10v4"/>'),keyboard:d('<rect x="3" y="7" width="18" height="11" rx="2"/><path d="M6.5 10.5h0M10 10.5h0M13.5 10.5h0M17 10.5h0M6.5 13h0M10 13h0M13.5 13h0M17 13h0M8 15.5h8"/>'),camera:d('<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2L16.5 7h2A1.5 1.5 0 0 1 20 8.5V17a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17z"/><circle cx="12" cy="12.6" r="3.4"/>'),doc:d('<path d="M7 3.5h6.5L18 8v11a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19V5a1.5 1.5 0 0 1 1-1.42z"/><path d="M13.5 3.8V8H18"/><path d="M9 12.5h6M9 15.5h6"/>'),folder:d('<path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4l2 2.3h8A1.5 1.5 0 0 1 20.5 9.3V17A1.5 1.5 0 0 1 19 18.5H5A1.5 1.5 0 0 1 3.5 17z"/>'),person:d('<circle cx="12" cy="8.2" r="3.7"/><path d="M5 20c.8-4 3.6-6 7-6s6.2 2 7 6"/>'),people:d('<circle cx="9" cy="8.6" r="3.3"/><path d="M3.2 19.5c.7-3.5 3-5.3 5.8-5.3s5.1 1.8 5.8 5.3"/><path d="M15.4 5.7a3.3 3.3 0 0 1 0 5.9M17.6 14.6c1.8.7 3 2.3 3.5 4.9"/>'),check:d('<path d="M5 13l4.2 4.2L19 6.8"/>'),checklist:d('<path d="M4 6.5l1.5 1.5L8 5.5"/><path d="M4 13l1.5 1.5L8 12"/><path d="M4 19.2l1.5 1.5 2.5-2.5" opacity="0.4"/><path d="M11 6.5h9M11 13h9M11 19.2h9"/>'),chart:d('<path d="M4 20V9M10 20V4M16 20v-8M20.5 20H3.5" stroke-width="2.1"/>'),heart:d('<path d="M12 20s-7.5-4.7-7.5-10A4.3 4.3 0 0 1 12 7.3 4.3 4.3 0 0 1 19.5 10c0 5.3-7.5 10-7.5 10z"/>'),gear:d('<circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"/>'),chevR:d('<path d="M9 5.5 15.5 12 9 18.5"/>'),chevL:d('<path d="M15 5.5 8.5 12 15 18.5"/>'),chevD:d('<path d="M5.5 9 12 15.5 18.5 9"/>'),lock:d('<rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>'),shield:d('<path d="M12 3.5 19 6v5.5c0 4.5-3 8-7 9.5-4-1.5-7-5-7-9.5V6z"/><path d="M9.5 11.8l1.8 1.8 3.4-3.6"/>'),plus:d('<path d="M12 5v14M5 12h14"/>'),x:d('<path d="M6 6l12 12M18 6 6 18"/>'),copy:d('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/>'),play:d('<path d="M8 5.5v13l11-6.5z" fill="currentColor" stroke="none"/>'),arrowUp:d('<path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/>'),calendar:d('<rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>'),clock:d('<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.4l3.4 2"/>'),sparkles:d('<path d="M12 4l1.7 4.3L18 10l-4.3 1.7L12 16l-1.7-4.3L6 10l4.3-1.7z" fill="currentColor" stroke="none"/><path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" fill="currentColor" stroke="none"/>'),link:d('<path d="M10 14a4.2 4.2 0 0 0 6 0l3-3a4.24 4.24 0 0 0-6-6l-1.2 1.2"/><path d="M14 10a4.2 4.2 0 0 0-6 0l-3 3a4.24 4.24 0 0 0 6 6l1.2-1.2"/>'),flame:d('<path d="M12 20.5c3.6 0 6-2.3 6-5.6 0-2.4-1.3-4.2-2.7-5.9C13.9 7.3 12.6 5.6 12.5 3.5c-2.3 1.4-3.1 3.4-3 5.2.1 1.2-.9.9-1.6.2-.4-.4-.7-.9-.8-1.4C5.7 8.9 6 11.5 6 14.9c0 3.3 2.4 5.6 6 5.6z"/>'),dollar:d('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M14.6 9.2c-.5-.9-1.5-1.4-2.6-1.4-1.4 0-2.5.8-2.5 2s1 1.7 2.5 2 2.8.9 2.8 2.2-1.2 2.1-2.8 2.1c-1.2 0-2.3-.6-2.8-1.5"/>'),meal:d('<path d="M7 3.5v6a2 2 0 0 0 2 2v9M9 3.5v5M11 3.5v5"/><path d="M16.5 3.5c-1.7 1-2.5 3.2-2.5 5.5 0 1.6.8 2.5 2.5 2.5v9"/>'),dumbbell:d('<path d="M7 8v8M17 8v8M4 10v4M20 10v4M7 12h10"/>'),network:d('<circle cx="12" cy="12" r="2.6"/><circle cx="5" cy="6" r="1.9"/><circle cx="19" cy="6" r="1.9"/><circle cx="5" cy="18" r="1.9"/><circle cx="19" cy="18" r="1.9"/><path d="M6.6 7.2l3.4 3M17.4 7.2l-3.4 3M6.6 16.8l3.4-3M17.4 16.8l-3.4-3"/>'),cloud:d('<path d="M7 18.5a4 4 0 0 1-.4-8A5.5 5.5 0 0 1 17.3 9a4.3 4.3 0 0 1-.3 8.6z"/>'),iphone:d('<rect x="7" y="3" width="10" height="18" rx="2.4"/><path d="M11 18.2h2"/>'),bell:d('<path d="M6 16.5v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'),quote:d('<path d="M5 13.5c0-4 2.2-6.7 5.5-7.5l.6 1.6C8.8 8.5 8 10 8 11.5c1.5 0 2.7 1.1 2.7 2.7A2.7 2.7 0 0 1 8 17c-1.9 0-3-1.4-3-3.5zM13.5 13.5c0-4 2.2-6.7 5.5-7.5l.6 1.6c-2.3.9-3.1 2.4-3.1 3.9 1.5 0 2.7 1.1 2.7 2.7a2.7 2.7 0 0 1-2.7 2.8c-1.9 0-3-1.4-3-3.5z" fill="currentColor" stroke="none"/>'),ellipsis:d('<circle cx="5.5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.4" fill="currentColor" stroke="none"/>'),search:d('<circle cx="11" cy="11" r="6.8"/><path d="M15.9 15.9 20.5 20.5"/>'),info:d('<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 7.8v.2"/>'),stop:d('<rect x="7" y="7" width="10" height="10" rx="2.4" fill="currentColor" stroke="none"/>'),wand:d('<path d="M5 19 15.5 8.5"/><path d="M17.5 3.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" fill="currentColor" stroke="none"/><path d="M19.5 12.5l.5 1.3 1.3.5-1.3.5-.5 1.3-.5-1.3-1.3-.5 1.3-.5z" fill="currentColor" stroke="none"/>'),moon:d('<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>'),trash:d('<path d="M5 6.5h14M9.5 6.5V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v1.5M7 6.5 8 20a1.5 1.5 0 0 0 1.5 1.4h5A1.5 1.5 0 0 0 16 20l1-13.5"/>'),scan:d('<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M4 12h16"/>'),send:d('<path d="M4.5 12 19.5 4.5 15 19.5l-3.2-5.3z"/><path d="M11.8 14.2 19.5 4.5"/>')};function pe(){return`<div class="statusbar">
+<script>(()=>{var X=new Map,A=[],K,re,Q=null;function u(e,t){X.set(e,t)}function ce(e){Q=e}function N(){return A[A.length-1]||null}function de(e){K=e,re=document.querySelector(".phone"),re.addEventListener("click",t=>{if(t.target.closest("[data-nav='back']")){ee();return}let s=t.target.closest("[data-go]");if(s&&!s.dataset.goHandled){let[o,i]=s.dataset.go.split(":");C(o,i)}})}function Z(e,t){let a=X.get(e.route);if(!a)return;let{html:s,onMount:o}=a.render(e.param),i=document.createElement("div");i.className=`screen enter-${t}`,i.dataset.route=e.route,i.innerHTML=s;let l=[...K.querySelectorAll(".screen")];K.appendChild(i),l.length&&setTimeout(()=>l.forEach(r=>r.remove()),380),o&&o(i),Q&&Q(e,i)}function C(e,t){let a=X.get(e);if(!a)return;if(a.sheet){a.render(t);return}let s={route:e,param:t};a.kind==="root"?(A=[s],Z(s,"fade")):(A.push(s),Z(s,a.kind==="cover"?"fade":"push"))}function ee(){A.length<=1||(A.pop(),Z(A[A.length-1],"pop"))}var d=(e,t="0 0 24 24",a=!1)=>`<svg viewBox="${t}" fill="${a?"currentColor":"none"}" ${a?"":'stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"'} aria-hidden="true">${e}</svg>`,n={house:d('<path d="M4 11l8-7 8 7v8a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 19z"/><path d="M9.6 20v-6h4.8v6"/>'),grid:d('<rect x="4" y="4" width="6.6" height="6.6" rx="1.8"/><rect x="13.4" y="4" width="6.6" height="6.6" rx="1.8"/><rect x="4" y="13.4" width="6.6" height="6.6" rx="1.8"/><rect x="13.4" y="13.4" width="6.6" height="6.6" rx="1.8"/>'),askGlyph:d('<circle cx="10.6" cy="10.6" r="6.4"/><path d="M15.4 15.4 20 20"/><path d="M10.6 7.8v0M8 10.6h5.2" stroke-width="0"/><path d="M10.6 8.2l.7 1.7 1.7.7-1.7.7-.7 1.7-.7-1.7-1.7-.7 1.7-.7z" fill="currentColor" stroke="none"/>'),mic:d('<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v2.5"/>'),waveBars:d('<path d="M4 10v4M8 7v10M12 4.5v15M16 7v10M20 10v4"/>'),keyboard:d('<rect x="3" y="7" width="18" height="11" rx="2"/><path d="M6.5 10.5h0M10 10.5h0M13.5 10.5h0M17 10.5h0M6.5 13h0M10 13h0M13.5 13h0M17 13h0M8 15.5h8"/>'),camera:d('<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2L16.5 7h2A1.5 1.5 0 0 1 20 8.5V17a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17z"/><circle cx="12" cy="12.6" r="3.4"/>'),doc:d('<path d="M7 3.5h6.5L18 8v11a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19V5a1.5 1.5 0 0 1 1-1.42z"/><path d="M13.5 3.8V8H18"/><path d="M9 12.5h6M9 15.5h6"/>'),folder:d('<path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4l2 2.3h8A1.5 1.5 0 0 1 20.5 9.3V17A1.5 1.5 0 0 1 19 18.5H5A1.5 1.5 0 0 1 3.5 17z"/>'),person:d('<circle cx="12" cy="8.2" r="3.7"/><path d="M5 20c.8-4 3.6-6 7-6s6.2 2 7 6"/>'),people:d('<circle cx="9" cy="8.6" r="3.3"/><path d="M3.2 19.5c.7-3.5 3-5.3 5.8-5.3s5.1 1.8 5.8 5.3"/><path d="M15.4 5.7a3.3 3.3 0 0 1 0 5.9M17.6 14.6c1.8.7 3 2.3 3.5 4.9"/>'),check:d('<path d="M5 13l4.2 4.2L19 6.8"/>'),checklist:d('<path d="M4 6.5l1.5 1.5L8 5.5"/><path d="M4 13l1.5 1.5L8 12"/><path d="M4 19.2l1.5 1.5 2.5-2.5" opacity="0.4"/><path d="M11 6.5h9M11 13h9M11 19.2h9"/>'),chart:d('<path d="M4 20V9M10 20V4M16 20v-8M20.5 20H3.5" stroke-width="2.1"/>'),heart:d('<path d="M12 20s-7.5-4.7-7.5-10A4.3 4.3 0 0 1 12 7.3 4.3 4.3 0 0 1 19.5 10c0 5.3-7.5 10-7.5 10z"/>'),gear:d('<circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"/>'),chevR:d('<path d="M9 5.5 15.5 12 9 18.5"/>'),chevL:d('<path d="M15 5.5 8.5 12 15 18.5"/>'),chevD:d('<path d="M5.5 9 12 15.5 18.5 9"/>'),lock:d('<rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>'),shield:d('<path d="M12 3.5 19 6v5.5c0 4.5-3 8-7 9.5-4-1.5-7-5-7-9.5V6z"/><path d="M9.5 11.8l1.8 1.8 3.4-3.6"/>'),plus:d('<path d="M12 5v14M5 12h14"/>'),x:d('<path d="M6 6l12 12M18 6 6 18"/>'),copy:d('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/>'),play:d('<path d="M8 5.5v13l11-6.5z" fill="currentColor" stroke="none"/>'),arrowUp:d('<path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/>'),calendar:d('<rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>'),clock:d('<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.4l3.4 2"/>'),sparkles:d('<path d="M12 4l1.7 4.3L18 10l-4.3 1.7L12 16l-1.7-4.3L6 10l4.3-1.7z" fill="currentColor" stroke="none"/><path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" fill="currentColor" stroke="none"/>'),link:d('<path d="M10 14a4.2 4.2 0 0 0 6 0l3-3a4.24 4.24 0 0 0-6-6l-1.2 1.2"/><path d="M14 10a4.2 4.2 0 0 0-6 0l-3 3a4.24 4.24 0 0 0 6 6l1.2-1.2"/>'),flame:d('<path d="M12 20.5c3.6 0 6-2.3 6-5.6 0-2.4-1.3-4.2-2.7-5.9C13.9 7.3 12.6 5.6 12.5 3.5c-2.3 1.4-3.1 3.4-3 5.2.1 1.2-.9.9-1.6.2-.4-.4-.7-.9-.8-1.4C5.7 8.9 6 11.5 6 14.9c0 3.3 2.4 5.6 6 5.6z"/>'),dollar:d('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M14.6 9.2c-.5-.9-1.5-1.4-2.6-1.4-1.4 0-2.5.8-2.5 2s1 1.7 2.5 2 2.8.9 2.8 2.2-1.2 2.1-2.8 2.1c-1.2 0-2.3-.6-2.8-1.5"/>'),meal:d('<path d="M7 3.5v6a2 2 0 0 0 2 2v9M9 3.5v5M11 3.5v5"/><path d="M16.5 3.5c-1.7 1-2.5 3.2-2.5 5.5 0 1.6.8 2.5 2.5 2.5v9"/>'),dumbbell:d('<path d="M7 8v8M17 8v8M4 10v4M20 10v4M7 12h10"/>'),network:d('<circle cx="12" cy="12" r="2.6"/><circle cx="5" cy="6" r="1.9"/><circle cx="19" cy="6" r="1.9"/><circle cx="5" cy="18" r="1.9"/><circle cx="19" cy="18" r="1.9"/><path d="M6.6 7.2l3.4 3M17.4 7.2l-3.4 3M6.6 16.8l3.4-3M17.4 16.8l-3.4-3"/>'),cloud:d('<path d="M7 18.5a4 4 0 0 1-.4-8A5.5 5.5 0 0 1 17.3 9a4.3 4.3 0 0 1-.3 8.6z"/>'),iphone:d('<rect x="7" y="3" width="10" height="18" rx="2.4"/><path d="M11 18.2h2"/>'),bell:d('<path d="M6 16.5v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'),quote:d('<path d="M5 13.5c0-4 2.2-6.7 5.5-7.5l.6 1.6C8.8 8.5 8 10 8 11.5c1.5 0 2.7 1.1 2.7 2.7A2.7 2.7 0 0 1 8 17c-1.9 0-3-1.4-3-3.5zM13.5 13.5c0-4 2.2-6.7 5.5-7.5l.6 1.6c-2.3.9-3.1 2.4-3.1 3.9 1.5 0 2.7 1.1 2.7 2.7a2.7 2.7 0 0 1-2.7 2.8c-1.9 0-3-1.4-3-3.5z" fill="currentColor" stroke="none"/>'),ellipsis:d('<circle cx="5.5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.4" fill="currentColor" stroke="none"/>'),search:d('<circle cx="11" cy="11" r="6.8"/><path d="M15.9 15.9 20.5 20.5"/>'),info:d('<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 7.8v.2"/>'),stop:d('<rect x="7" y="7" width="10" height="10" rx="2.4" fill="currentColor" stroke="none"/>'),wand:d('<path d="M5 19 15.5 8.5"/><path d="M17.5 3.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" fill="currentColor" stroke="none"/><path d="M19.5 12.5l.5 1.3 1.3.5-1.3.5-.5 1.3-.5-1.3-1.3-.5 1.3-.5z" fill="currentColor" stroke="none"/>'),moon:d('<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>'),trash:d('<path d="M5 6.5h14M9.5 6.5V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v1.5M7 6.5 8 20a1.5 1.5 0 0 0 1.5 1.4h5A1.5 1.5 0 0 0 16 20l1-13.5"/>'),scan:d('<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M4 12h16"/>'),send:d('<path d="M4.5 12 19.5 4.5 15 19.5l-3.2-5.3z"/><path d="M11.8 14.2 19.5 4.5"/>')};function pe(){return`<div class="statusbar">
     <span>9:41</span>
     <span class="sb-icons">
       <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
       <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true"><path d="M8.5 11.5 6 8.7a3.7 3.7 0 0 1 5 0zM3.6 6a7.4 7.4 0 0 1 9.8 0l-1.7 1.9a4.9 4.9 0 0 0-6.4 0zM1 3.2a11.3 11.3 0 0 1 15 0l-1.7 1.9a8.8 8.8 0 0 0-11.6 0z"/></svg>
       <svg width="25" height="12" viewBox="0 0 25 12" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="15" height="8" rx="1.6" fill="currentColor"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" opacity="0.4"/></svg>
     </span>
-  </div>`}function h(e,{back:t=null,actions:s=""}={}){return`<div class="ctx-header">
-    ${t!==null?`<button class="chip-btn" data-nav="back" aria-label="Back">${o.chevL}</button>`:""}
+  </div>`}function h(e,{back:t=null,actions:a=""}={}){return`<div class="ctx-header">
+    ${t!==null?`<button class="chip-btn" data-nav="back" aria-label="Back">${n.chevL}</button>`:""}
     <div class="h-title">${e}</div>
-    ${s}
-  </div>`}function $(e,t="",s=""){return`<button class="chip-btn" ${t} aria-label="${s}">${e}</button>`}function ue(e="home"){return`<div class="dock-wrap">
+    ${a}
+  </div>`}function $(e,t="",a=""){return`<button class="chip-btn" ${t} aria-label="${a}">${e}</button>`}function ue(e="home"){return`<div class="dock-wrap">
     <div class="dock">
       <button class="dock-item ${e==="home"?"on":""}" data-go="home">
-        ${o.house}<span>Home</span>
+        ${n.house}<span>Home</span>
       </button>
       <button class="capture-mark" data-go="capture" aria-label="Capture with voice">
         <i></i><i></i><i></i><i></i>
       </button>
       <button class="dock-item" data-go="launcher">
-        ${o.grid}<span>Launcher</span>
+        ${n.grid}<span>Launcher</span>
       </button>
     </div>
-    <button class="ask-fab" data-go="ask" aria-label="Ask">${o.askGlyph}</button>
+    <button class="ask-fab" data-go="ask" aria-label="Ask">${n.askGlyph}</button>
   </div>`}function M(e="Update",t="update-sheet"){return`<div class="detail-bar">
-    <button class="update-cta" data-go="${t}">${o.waveBars}<span>${e}</span></button>
+    <button class="update-cta" data-go="${t}">${n.waveBars}<span>${e}</span></button>
   </div>`}function c(e,t=""){return`<div class="sec">
     <span class="eyebrow">${e}</span>
     ${t?`<button class="sec-link" data-go="${t.split("|")[1]}">${t.split("|")[0]}</button>`:""}
-  </div>`}function g({icon:e,avatar:t,title:s,sub:a="",value:i="",chev:n=!0,go:l="",tile:r="",badge:u=""}){return`<button class="row" ${l?`data-go="${l}"`:""}>
+  </div>`}function g({icon:e,avatar:t,title:a,sub:s="",value:o="",chev:i=!0,go:l="",tile:r="",badge:p=""}){return`<button class="row" ${l?`data-go="${l}"`:""}>
     ${t?`<span class="avatar ${r}">${t}</span>`:e?`<span class="row-icon ${r}">${e}</span>`:""}
     <span class="row-main">
-      <span class="row-title">${s}</span>
-      ${a?`<span class="row-sub">${a}</span>`:""}
+      <span class="row-title">${a}</span>
+      ${s?`<span class="row-sub">${s}</span>`:""}
     </span>
     <span class="row-end">
-      ${u}
-      ${i?`<span class="row-value">${i}</span>`:""}
-      ${n?'<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5.5 15.5 12 9 18.5"/></svg>':""}
+      ${p}
+      ${o?`<span class="row-value">${o}</span>`:""}
+      ${i?'<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5.5 15.5 12 9 18.5"/></svg>':""}
     </span>
-  </button>`}function f(e="Stored on this device"){return`<div class="privacy-line">${o.lock}<span>${e}</span></div>`}function N(e=40,t=!0,s=120){let a="";for(let i=0;i<e;i++){let n=(i+1)*.7548776662%1,l=18+Math.round(n*74),r=(i+1)*.5698402909%1*1.1;a+=`<i style="height:${l}%;animation-delay:-${r.toFixed(2)}s"></i>`}return`<div class="waveform ${t?"live":""}" style="height:${s}px">${a}</div>`}function T(e,t=""){return`<button class="toggle ${e?"on":""}" role="switch" aria-checked="${e}" ${t}></button>`}function ge(e,t=4){let s="";for(let a=0;a<t;a++)s+=`<i class="${a<=e?"on":""}"></i>`;return`<div class="seg-progress">${s}</div>`}function A(e,{onClose:t}={}){let s=document.querySelector(".phone"),a=document.createElement("div");a.className="sheet-scrim";let i=document.createElement("div");i.className="sheet",i.setAttribute("role","dialog"),i.innerHTML=`<div class="grabber"></div>${e}`,s.append(a,i);let n=()=>{a.remove(),i.remove(),t&&t()};return a.addEventListener("click",n),i.addEventListener("click",l=>{l.target.closest("[data-sheet-close]")&&n()}),{close:n,el:i}}var qe=0;function v({size:e=96,pose:t="idle",heart:s=.75}={}){let a=`nomi${++qe}`;return`
-  <svg class="nomi is-${t}" style="--heart:${s}" width="${e}" height="${e}"
+  </button>`}function f(e="Stored on this device"){return`<div class="privacy-line">${n.lock}<span>${e}</span></div>`}function H(e=40,t=!0,a=120){let s="";for(let o=0;o<e;o++){let i=(o+1)*.7548776662%1,l=18+Math.round(i*74),r=(o+1)*.5698402909%1*1.1;s+=`<i style="height:${l}%;animation-delay:-${r.toFixed(2)}s"></i>`}return`<div class="waveform ${t?"live":""}" style="height:${a}px">${s}</div>`}function T(e,t=""){return`<button class="toggle ${e?"on":""}" role="switch" aria-checked="${e}" ${t}></button>`}function ge(e,t=4){let a="";for(let s=0;s<t;s++)a+=`<i class="${s<=e?"on":""}"></i>`;return`<div class="seg-progress">${a}</div>`}function z(e,{onClose:t}={}){let a=document.querySelector(".phone"),s=document.createElement("div");s.className="sheet-scrim";let o=document.createElement("div");o.className="sheet",o.setAttribute("role","dialog"),o.innerHTML=`<div class="grabber"></div>${e}`,a.append(s,o);let i=()=>{s.remove(),o.remove(),t&&t()};return s.addEventListener("click",i),o.addEventListener("click",l=>{l.target.closest("[data-sheet-close]")&&i()}),{close:i,el:o}}var De=0;function v({size:e=96,pose:t="idle",heart:a=.75}={}){let s=`nomi${++De}`;return`
+  <svg class="nomi is-${t}" style="--heart:${a}" width="${e}" height="${e}"
        viewBox="0 0 120 120" role="img" aria-label="Nomi, ${t}">
     <defs>
-      <radialGradient id="${a}-sh" cx="42%" cy="24%" r="90%">
+      <radialGradient id="${s}-sh" cx="42%" cy="24%" r="90%">
         <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7"/>
         <stop offset="52%" stop-color="#ffffff" stop-opacity="0"/>
         <stop offset="100%" stop-color="var(--pebble-shade)" stop-opacity="0.42"/>
       </radialGradient>
-      <radialGradient id="${a}-hg" cx="50%" cy="50%" r="50%">
+      <radialGradient id="${s}-hg" cx="50%" cy="50%" r="50%">
         <stop offset="0%" stop-color="var(--heart-core)" stop-opacity="0.9"/>
         <stop offset="40%" stop-color="var(--sky-bright)" stop-opacity="0.5"/>
         <stop offset="100%" stop-color="var(--sky-bright)" stop-opacity="0"/>
@@ -1542,7 +1677,7 @@ svg {
       <path class="n-body"
         d="M60 18 C 80 18 99 35 104 60 C 109 86 91 105 60 105 C 29 105 11 86 16 60 C 21 35 40 18 60 18 Z"/>
       <path d="M60 18 C 80 18 99 35 104 60 C 109 86 91 105 60 105 C 29 105 11 86 16 60 C 21 35 40 18 60 18 Z"
-        fill="url(#${a}-sh)"/>
+        fill="url(#${s}-sh)"/>
       ${t==="happy"?`<g class="n-eyes">
          <path class="n-arc" d="M37 62 q7.5 -8 15 0"/>
          <path class="n-arc" d="M68 62 q7.5 -8 15 0"/>
@@ -1552,15 +1687,15 @@ svg {
          <ellipse class="n-eye" cx="76" cy="61" rx="3.6" ry="4.7"/>
        </g>`}
       <g class="n-heart">
-        <circle class="n-heart-glow" cx="60" cy="85" r="11" fill="url(#${a}-hg)"/>
-        <circle cx="60" cy="85" r="3.4" fill="var(--heart-core)" opacity="${.3+s*.55}"/>
+        <circle class="n-heart-glow" cx="60" cy="85" r="11" fill="url(#${s}-hg)"/>
+        <circle cx="60" cy="85" r="3.4" fill="var(--heart-core)" opacity="${.3+a*.55}"/>
       </g>
     </g>
   </svg>`}var x={agent:"Nomi",company:"Context",lockup:"Nomi",lockupBy:"by Context",pro:"Context Pro",tagline:"One context. Private on your device. For every agent."},j={briefByline:`${x.agent} \xB7 this morning`,askTitle:`Ask ${x.agent}`,askPlaceholder:`Search, or ask ${x.agent} about your context`,meet:`Meet ${x.agent}.`};var J=(e,t)=>`
   <div class="screen-body" style="display:flex;flex-direction:column;padding-top:4px">
     ${e>=0?ge(e):""}
     ${t}
-  </div>`;p("onb-splash",{kind:"root",render:()=>({html:`
+  </div>`;u("onb-splash",{kind:"root",render:()=>({html:`
     <div class="screen-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-bottom:80px">
       <div id="emergence">${v({size:150,pose:"dormant",heart:.05})}</div>
       <div id="lockup" style="opacity:0;transition:opacity 0.8s ease 0.2s;margin-top:26px">
@@ -1570,7 +1705,7 @@ svg {
       <button id="splash-cta" class="cta" data-go="onb-promise" style="opacity:0;transition:opacity 0.6s ease 0.4s;margin-top:44px;max-width:300px">
         ${j.meet}
       </button>
-    </div>`,onMount:e=>{let t=e.querySelector("#emergence");setTimeout(()=>{t.innerHTML=v({size:150,pose:"idle",heart:.55}),e.querySelector("#lockup").style.opacity="1",e.querySelector("#splash-cta").style.opacity="1"},900)}})});p("onb-promise",{kind:"root",render:()=>({html:J(0,`<div class="stagger" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding-bottom:40px">
+    </div>`,onMount:e=>{let t=e.querySelector("#emergence");setTimeout(()=>{t.innerHTML=v({size:150,pose:"idle",heart:.55}),e.querySelector("#lockup").style.opacity="1",e.querySelector("#splash-cta").style.opacity="1"},900)}})});u("onb-promise",{kind:"root",render:()=>({html:J(0,`<div class="stagger" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding-bottom:40px">
         ${v({size:92,pose:"idle",heart:.45})}
         <h1 class="display-lg" style="margin-top:26px">Your life,<br/>in context.</h1>
         <p class="body" style="margin-top:14px;font-size:17px">
@@ -1580,7 +1715,7 @@ svg {
         </p>
       </div>
       <button class="cta" data-go="onb-processing">Create my context</button>
-      <p class="micro center" style="margin-top:14px">No account required</p>`)})});var te="cloud";p("onb-processing",{kind:"root",render:()=>({html:J(1,`<div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding-bottom:30px">
+      <p class="micro center" style="margin-top:14px">No account required</p>`)})});var te="cloud";u("onb-processing",{kind:"root",render:()=>({html:J(1,`<div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding-bottom:30px">
         ${v({size:72,pose:"thinking",heart:.5})}
         <h1 class="display" style="margin-top:22px">Choose how ${x.agent} thinks</h1>
         <p class="meta" style="margin-top:8px">You can change this any time in Privacy &amp; Processing.</p>
@@ -1610,17 +1745,17 @@ svg {
           </button>
         </div>
       </div>
-      <button class="cta" data-go="onb-capture">Continue</button>`),onMount:e=>{e.addEventListener("click",t=>{let s=t.target.closest("[data-proc]");s&&(te=s.dataset.proc,e.querySelectorAll(".radio-card").forEach(a=>a.classList.toggle("selected",a===s)))})}})});p("onb-capture",{kind:"root",render:()=>({html:J(2,`<div id="cap-stage" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding-bottom:30px"></div>
-      <div id="cap-actions"></div>`),onMount:e=>{let t=e.querySelector("#cap-stage"),s=e.querySelector("#cap-actions"),a=()=>{t.innerHTML=`
+      <button class="cta" data-go="onb-capture">Continue</button>`),onMount:e=>{e.addEventListener("click",t=>{let a=t.target.closest("[data-proc]");a&&(te=a.dataset.proc,e.querySelectorAll(".radio-card").forEach(s=>s.classList.toggle("selected",s===a)))})}})});u("onb-capture",{kind:"root",render:()=>({html:J(2,`<div id="cap-stage" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding-bottom:30px"></div>
+      <div id="cap-actions"></div>`),onMount:e=>{let t=e.querySelector("#cap-stage"),a=e.querySelector("#cap-actions"),s=()=>{t.innerHTML=`
           ${v({size:84,pose:"idle",heart:.55})}
           <h1 class="display" style="margin-top:22px">Capture one real thing</h1>
-          <p class="body" style="margin-top:10px">Try a thought, a task, an expense, a meal \u2014 anything you want to remember.</p>`,s.innerHTML=`
-          <button class="cta" data-cap="rec">${o.mic}<span>Capture with voice</span></button>
-          <button class="cta cta-outline" data-cap="example" style="margin-top:10px">Use an example instead</button>`},i=()=>{t.innerHTML=`
+          <p class="body" style="margin-top:10px">Try a thought, a task, an expense, a meal \u2014 anything you want to remember.</p>`,a.innerHTML=`
+          <button class="cta" data-cap="rec">${n.mic}<span>Capture with voice</span></button>
+          <button class="cta cta-outline" data-cap="example" style="margin-top:10px">Use an example instead</button>`},o=()=>{t.innerHTML=`
           ${v({size:84,pose:"listening",heart:.66})}
           <h1 class="display" style="margin-top:22px">I\u2019m listening</h1>
-          <div style="margin-top:18px">${N(36,!0,84)}</div>
-          <p class="meta center" id="cap-transcript" style="min-height:40px;margin-top:14px"></p>`,s.innerHTML=`<button class="cta" data-cap="stop">${o.stop}<span>Stop and save</span></button>`;let l="Remind me to send Maya the launch notes tomorrow\u2026".split(" "),r=e.querySelector("#cap-transcript"),u=0,y=setInterval(()=>{if(!r.isConnected)return clearInterval(y);r.textContent=l.slice(0,++u).join(" "),u>=l.length&&clearInterval(y)},320)},n=()=>{t.innerHTML=`
+          <div style="margin-top:18px">${H(36,!0,84)}</div>
+          <p class="meta center" id="cap-transcript" style="min-height:40px;margin-top:14px"></p>`,a.innerHTML=`<button class="cta" data-cap="stop">${n.stop}<span>Stop and save</span></button>`;let l="Remind me to send Maya the launch notes tomorrow\u2026".split(" "),r=e.querySelector("#cap-transcript"),p=0,y=setInterval(()=>{if(!r.isConnected)return clearInterval(y);r.textContent=l.slice(0,++p).join(" "),p>=l.length&&clearInterval(y)},320)},i=()=>{t.innerHTML=`
           ${v({size:84,pose:"thinking",heart:.7})}
           <div class="card" style="margin-top:26px;display:flex;gap:12px;align-items:center">
             <div class="skel" style="width:42px;height:42px;border-radius:12px;flex:none"></div>
@@ -1628,7 +1763,7 @@ svg {
               <div style="font-size:15px;font-weight:650">Turning this into context</div>
               <div class="meta" style="margin-top:3px">Keeping the source so you can always verify it</div>
             </div>
-          </div>`,s.innerHTML="",setTimeout(()=>C("onb-result"),1700)};e.addEventListener("click",l=>{let r=l.target.closest("[data-cap]");r&&(r.dataset.cap==="rec"&&i(),r.dataset.cap==="stop"&&n(),r.dataset.cap==="example"&&n())}),a()}})});p("onb-result",{kind:"root",render:()=>({html:J(3,`<div class="stagger" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding-bottom:30px">
+          </div>`,a.innerHTML="",setTimeout(()=>C("onb-result"),1700)};e.addEventListener("click",l=>{let r=l.target.closest("[data-cap]");r&&(r.dataset.cap==="rec"&&o(),r.dataset.cap==="stop"&&i(),r.dataset.cap==="example"&&i())}),s()}})});u("onb-result",{kind:"root",render:()=>({html:J(3,`<div class="stagger" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding-bottom:30px">
         ${v({size:84,pose:"happy",heart:.8})}
         <h1 class="display" style="margin-top:22px">Now it\u2019s useful</h1>
         <p class="body" style="margin-top:10px">
@@ -1636,32 +1771,32 @@ svg {
           person, the task, and the date without hiding where anything came from.
         </p>
         <div class="card" style="margin-top:20px;border-radius:18px">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px" class="eyebrow">${o.quote} Source capture</div>
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px" class="eyebrow">${n.quote} Source capture</div>
           <div style="font-size:16.5px;line-height:1.45">\u201CRemind me to send Maya the launch notes tomorrow.\u201D</div>
           <hr class="hairline" style="margin:13px 0" />
           <div style="display:flex;gap:14px;flex-wrap:wrap">
-            <span class="micro" style="display:flex;align-items:center;gap:5px">${o.checklist} Task \xB7 tomorrow</span>
-            <span class="micro" style="display:flex;align-items:center;gap:5px">${o.person} Maya Chen</span>
-            <span class="micro" style="display:flex;align-items:center;gap:5px">${o.iphone} On device</span>
+            <span class="micro" style="display:flex;align-items:center;gap:5px">${n.checklist} Task \xB7 tomorrow</span>
+            <span class="micro" style="display:flex;align-items:center;gap:5px">${n.person} Maya Chen</span>
+            <span class="micro" style="display:flex;align-items:center;gap:5px">${n.iphone} On device</span>
           </div>
         </div>
       </div>
-      <button class="cta" data-go="home">Enter ${x.company}</button>`)})});var E={name:"Sam",initials:"S"},w=[{id:"maya",name:"Maya Chen",initials:"MC",role:"Design lead",last:"Design review \u2014 asked for the launch notes",memories:14},{id:"alex",name:"Alex Rivera",initials:"AR",role:"Engineer",last:"1:1 \u2014 flagged the sync migration risk",memories:11},{id:"priya",name:"Priya Patel",initials:"PP",role:"Client \xB7 Northwind",last:"Client call \u2014 wants the pilot in September",memories:8},{id:"dan",name:"Daniel Kim",initials:"DK",role:"Advisor",last:"Intro breakfast \u2014 offered to review pricing",memories:5},{id:"lena",name:"Lena Fischer",initials:"LF",role:"Recruiter",last:"Mentioned a staff designer candidate",memories:3}],F=[{id:"standup",time:"9:00",title:"Standup",done:!0,mins:12,actions:1,people:["alex"]},{id:"design",time:"11:30",title:"Design review",done:!0,mins:47,actions:3,people:["maya"]},{id:"oneone",time:"2:00",title:"1:1 \xB7 Alex",done:!0,mins:28,actions:2,people:["alex"]},{id:"client",time:"4:30",title:"Client call \xB7 Northwind",done:!1,live:!0,mins:18,actions:0,people:["priya"]}],S=[{id:"t1",title:"Send Maya the launch notes",due:"Today",state:"todo",pri:"high",project:"Launch",steps:[2,3],overdue:!1},{id:"t2",title:"Review sync migration plan",due:"Today",state:"started",pri:"med",project:"Platform",steps:[1,4],overdue:!1},{id:"t3",title:"Follow up on Northwind pilot scope",due:"Yesterday",state:"todo",pri:"high",project:"Sales",steps:[0,2],overdue:!0},{id:"t4",title:"Book flights for the offsite",due:"Fri",state:"todo",pri:"low",project:null,steps:null,overdue:!1},{id:"t5",title:"Draft pricing page copy",due:null,state:"backlog",pri:"med",project:"Launch",steps:[0,3],overdue:!1}],se=[{id:"m1",time:"3:41 PM",kind:"Meeting",folder:"work",text:"Design review with Maya \u2014 locked the onboarding flow, she'll send revised comps by Thursday. Two open questions on the empty states.",extracted:["task"],people:["maya"]},{id:"m2",time:"1:15 PM",kind:"Logged meal",folder:null,text:"Chicken rice bowl and an iced americano from the corner place.",value:"640 kcal",people:[]},{id:"m3",time:"11:02 AM",kind:"Thought",folder:"ideas",text:"The pilot pricing should anchor on seats, not usage \u2014 Priya kept translating everything back to headcount.",people:["priya"]},{id:"m4",time:"8:20 AM",kind:"Logged workout",folder:null,text:"Morning run along the river, easy pace.",value:"5.2 km \xB7 29 min",people:[]},{id:"m5",time:"Yesterday",kind:"Logged expense",folder:null,text:"Team lunch after the review.",value:"$64.00",people:["maya","alex"]}],H=[{id:"d1",name:"Launch brief.pdf",type:"PDF",date:"12 Jul",pages:9,summary:"Positioning, target segments, and the two-week launch sequence.",person:"maya",facts:["Launch window: first week of September","Primary segment: solo consultants","Budget cap $12k"],engine:"On-device"},{id:"d2",name:"Northwind pilot terms.docx",type:"DOC",date:"26 Jul",pages:4,summary:"Draft pilot agreement \u2014 20 seats, 8 weeks, success criteria.",person:"priya",facts:["20 seats","8-week term","Success = 60% weekly active"],engine:"On-device"},{id:"d3",name:"Passport.jpg",type:"IMG",date:"3 Jun",pages:1,summary:"Identity document \u2014 expires 2031.",person:null,facts:["Expires Mar 2031"],engine:"On-device"}],b={steps:7412,activeKcal:428,kcalIn:1460,kcalGoal:2100,protein:86,weight:"72.4 kg",resting:58,meals:[{id:"meal1",t:"8:05 AM",name:"Greek yogurt, berries, granola",kcal:340,p:22,c:41,f:9},{id:"meal2",t:"1:15 PM",name:"Chicken rice bowl, iced americano",kcal:640,p:42,c:68,f:18},{id:"meal3",t:"4:10 PM",name:"Apple and almonds",kcal:180,p:5,c:19,f:10}],workouts:[{id:"w1",t:"8:20 AM",name:"Morning run",detail:"5.2 km \xB7 29 min \xB7 easy",kcal:320,src:"Voice"},{id:"w2",t:"Yesterday",name:"Push day",detail:"Bench 4\xD78 \xB7 60 kg, dips, cable fly",kcal:280,src:"Voice"}],expenses:[{id:"e1",t:"1:20 PM",name:"Lunch \u2014 corner place",cat:"Food",amt:14.5},{id:"e2",t:"9:12 AM",name:"Taxi to Northwind office",cat:"Transport",amt:22},{id:"e3",t:"Yesterday",name:"Team lunch",cat:"Food",amt:64}],weekSpend:212,budget:400},ae=[{id:"claude",name:"Claude",label:"Claude \xB7 MacBook",issued:"12 Jul",writes:!0,deletes:!1,glyph:"\u2733"},{id:"chatgpt",name:"ChatGPT",label:"ChatGPT \xB7 iPhone",issued:"26 Jul",writes:!1,deletes:!1,glyph:"\u25CE"}],Y={greetingSub:"Client day. One overdue thread needs a nudge before the 4:30.",recap:"Yesterday you closed the design review and logged two workouts. The Northwind pilot scope is still waiting on your follow-up \u2014 Priya asked for it Tuesday.",focus:"Send the pilot scope to Priya before the 4:30 call.",then:"Send Maya the launch notes."},G={q:"What did we decide with Maya?",a:"In Thursday's design review you and Maya locked the onboarding flow: four steps, capture-first, no account required. She owes you revised comps by Thursday, and the two open questions are both about empty states \u2014 what shows before the first capture, and whether the example memory stays.",sources:[{n:1,title:"Design review \xB7 Maya",sub:"Meeting \xB7 3:41 PM today",go:"memory:m1"},{n:2,title:"Launch brief.pdf",sub:"Document \xB7 12 Jul",go:"doc:d1"},{n:3,title:"Send Maya the launch notes",sub:"Task \xB7 due today",go:"task:t1"}]},_=[{id:"g-design",label:"Design review",icon:"calendar",x:26,y:18},{id:"g-client",label:"Client call",icon:"calendar",x:74,y:14},{id:"g-maya",label:"Maya",icon:"av:MC",x:14,y:44},{id:"g-priya",label:"Priya",icon:"av:PP",x:86,y:40},{id:"g-run",label:"Run \xB7 5.2k",icon:"dumbbell",x:22,y:78},{id:"g-meal",label:"Lunch \xB7 640",icon:"meal",x:50,y:88},{id:"g-week",label:"This week",icon:"clock",x:78,y:80},{id:"g-brief",label:"Launch brief",icon:"doc",x:38,y:8},{id:"g-terms",label:"Pilot terms",icon:"doc",x:90,y:62}],me=[["g-design","g-maya"],["g-client","g-priya"],["g-run","g-week"],["g-meal","g-week"],["g-brief","g-design"],["g-terms","g-priya"]];var je=e=>w.find(t=>t.id===e)?.name.split(" ")[0]||"";function De(){let e=F.map(a=>({time:a.time,title:a.title,live:a.live,done:a.done,kind:"evt"})),t=S.filter(a=>a.due==="Today"||a.overdue).slice(0,2),s=e.map(a=>`<button class="trow" data-go="recorder">
-        <span class="t-time">${a.time}</span>
+      <button class="cta" data-go="home">Enter ${x.company}</button>`)})});var E={name:"Sam",initials:"S"},w=[{id:"maya",name:"Maya Chen",initials:"MC",role:"Design lead",last:"Design review \u2014 asked for the launch notes",memories:14},{id:"alex",name:"Alex Rivera",initials:"AR",role:"Engineer",last:"1:1 \u2014 flagged the sync migration risk",memories:11},{id:"priya",name:"Priya Patel",initials:"PP",role:"Client \xB7 Northwind",last:"Client call \u2014 wants the pilot in September",memories:8},{id:"dan",name:"Daniel Kim",initials:"DK",role:"Advisor",last:"Intro breakfast \u2014 offered to review pricing",memories:5},{id:"lena",name:"Lena Fischer",initials:"LF",role:"Recruiter",last:"Mentioned a staff designer candidate",memories:3}],F=[{id:"standup",time:"9:00",title:"Standup",done:!0,mins:12,actions:1,people:["alex"]},{id:"design",time:"11:30",title:"Design review",done:!0,mins:47,actions:3,people:["maya"]},{id:"oneone",time:"2:00",title:"1:1 \xB7 Alex",done:!0,mins:28,actions:2,people:["alex"]},{id:"client",time:"4:30",title:"Client call \xB7 Northwind",done:!1,live:!0,mins:18,actions:0,people:["priya"]}],S=[{id:"t1",title:"Send Maya the launch notes",due:"Today",state:"todo",pri:"high",project:"Launch",steps:[2,3],overdue:!1},{id:"t2",title:"Review sync migration plan",due:"Today",state:"started",pri:"med",project:"Platform",steps:[1,4],overdue:!1},{id:"t3",title:"Follow up on Northwind pilot scope",due:"Yesterday",state:"todo",pri:"high",project:"Sales",steps:[0,2],overdue:!0},{id:"t4",title:"Book flights for the offsite",due:"Fri",state:"todo",pri:"low",project:null,steps:null,overdue:!1},{id:"t5",title:"Draft pricing page copy",due:null,state:"backlog",pri:"med",project:"Launch",steps:[0,3],overdue:!1}],se=[{id:"m1",time:"3:41 PM",kind:"Meeting",folder:"work",text:"Design review with Maya \u2014 locked the onboarding flow, she'll send revised comps by Thursday. Two open questions on the empty states.",extracted:["task"],people:["maya"]},{id:"m2",time:"1:15 PM",kind:"Logged meal",folder:null,text:"Chicken rice bowl and an iced americano from the corner place.",value:"640 kcal",people:[]},{id:"m3",time:"11:02 AM",kind:"Thought",folder:"ideas",text:"The pilot pricing should anchor on seats, not usage \u2014 Priya kept translating everything back to headcount.",people:["priya"]},{id:"m4",time:"8:20 AM",kind:"Logged workout",folder:null,text:"Morning run along the river, easy pace.",value:"5.2 km \xB7 29 min",people:[]},{id:"m5",time:"Yesterday",kind:"Logged expense",folder:null,text:"Team lunch after the review.",value:"$64.00",people:["maya","alex"]}],O=[{id:"d1",name:"Launch brief.pdf",type:"PDF",date:"12 Jul",pages:9,summary:"Positioning, target segments, and the two-week launch sequence.",person:"maya",facts:["Launch window: first week of September","Primary segment: solo consultants","Budget cap $12k"],engine:"On-device"},{id:"d2",name:"Northwind pilot terms.docx",type:"DOC",date:"26 Jul",pages:4,summary:"Draft pilot agreement \u2014 20 seats, 8 weeks, success criteria.",person:"priya",facts:["20 seats","8-week term","Success = 60% weekly active"],engine:"On-device"},{id:"d3",name:"Passport.jpg",type:"IMG",date:"3 Jun",pages:1,summary:"Identity document \u2014 expires 2031.",person:null,facts:["Expires Mar 2031"],engine:"On-device"}],b={steps:7412,activeKcal:428,kcalIn:1460,kcalGoal:2100,protein:86,weight:"72.4 kg",resting:58,meals:[{id:"meal1",t:"8:05 AM",name:"Greek yogurt, berries, granola",kcal:340,p:22,c:41,f:9},{id:"meal2",t:"1:15 PM",name:"Chicken rice bowl, iced americano",kcal:640,p:42,c:68,f:18},{id:"meal3",t:"4:10 PM",name:"Apple and almonds",kcal:180,p:5,c:19,f:10}],workouts:[{id:"w1",t:"8:20 AM",name:"Morning run",detail:"5.2 km \xB7 29 min \xB7 easy",kcal:320,src:"Voice"},{id:"w2",t:"Yesterday",name:"Push day",detail:"Bench 4\xD78 \xB7 60 kg, dips, cable fly",kcal:280,src:"Voice"}],expenses:[{id:"e1",t:"1:20 PM",name:"Lunch \u2014 corner place",cat:"Food",amt:14.5},{id:"e2",t:"9:12 AM",name:"Taxi to Northwind office",cat:"Transport",amt:22},{id:"e3",t:"Yesterday",name:"Team lunch",cat:"Food",amt:64}],weekSpend:212,budget:400},ae=[{id:"claude",name:"Claude",label:"Claude \xB7 MacBook",issued:"12 Jul",writes:!0,deletes:!1,glyph:"\u2733"},{id:"chatgpt",name:"ChatGPT",label:"ChatGPT \xB7 iPhone",issued:"26 Jul",writes:!1,deletes:!1,glyph:"\u25CE"}],Y={greetingSub:"Client day. One overdue thread needs a nudge before the 4:30.",recap:"Yesterday you closed the design review and logged two workouts. The Northwind pilot scope is still waiting on your follow-up \u2014 Priya asked for it Tuesday.",focus:"Send the pilot scope to Priya before the 4:30 call.",then:"Send Maya the launch notes."},G={q:"What did we decide with Maya?",a:"In Thursday's design review you and Maya locked the onboarding flow: four steps, capture-first, no account required. She owes you revised comps by Thursday, and the two open questions are both about empty states \u2014 what shows before the first capture, and whether the example memory stays.",sources:[{n:1,title:"Design review \xB7 Maya",sub:"Meeting \xB7 3:41 PM today",go:"memory:m1"},{n:2,title:"Launch brief.pdf",sub:"Document \xB7 12 Jul",go:"doc:d1"},{n:3,title:"Send Maya the launch notes",sub:"Task \xB7 due today",go:"task:t1"}]},_=[{id:"g-design",label:"Design review",icon:"calendar",x:26,y:18},{id:"g-client",label:"Client call",icon:"calendar",x:74,y:14},{id:"g-maya",label:"Maya",icon:"av:MC",x:14,y:44},{id:"g-priya",label:"Priya",icon:"av:PP",x:86,y:40},{id:"g-run",label:"Run \xB7 5.2k",icon:"dumbbell",x:22,y:78},{id:"g-meal",label:"Lunch \xB7 640",icon:"meal",x:50,y:88},{id:"g-week",label:"This week",icon:"clock",x:78,y:80},{id:"g-brief",label:"Launch brief",icon:"doc",x:38,y:8},{id:"g-terms",label:"Pilot terms",icon:"doc",x:90,y:62}],me=[["g-design","g-maya"],["g-client","g-priya"],["g-run","g-week"],["g-meal","g-week"],["g-brief","g-design"],["g-terms","g-priya"]];var Ie=e=>w.find(t=>t.id===e)?.name.split(" ")[0]||"";function Be(){let e=F.map(s=>({time:s.time,title:s.title,live:s.live,done:s.done,kind:"evt"})),t=S.filter(s=>s.due==="Today"||s.overdue).slice(0,2),a=e.map(s=>`<button class="trow" data-go="recorder">
+        <span class="t-time">${s.time}</span>
         <span class="t-main">
-          <span class="row-title" style="${a.done?"color:var(--text-4);font-weight:500":""}">${a.title}</span>
-          <span class="row-sub">${a.live?'<span class="sky" style="font-weight:650">\u25CF Recording</span>':a.done?"Ended \xB7 captured":"Up next"}</span>
+          <span class="row-title" style="${s.done?"color:var(--text-4);font-weight:500":""}">${s.title}</span>
+          <span class="row-sub">${s.live?'<span class="sky" style="font-weight:650">\u25CF Recording</span>':s.done?"Ended \xB7 captured":"Up next"}</span>
         </span>
-      </button>`).join("");return s+=t.map(a=>`<button class="trow" data-go="task:${a.id}">
-        <span class="t-time" style="align-self:center"><span class="check-ctl">${o.check}</span></span>
+      </button>`).join("");return a+=t.map(s=>`<button class="trow" data-go="task:${s.id}">
+        <span class="t-time" style="align-self:center"><span class="check-ctl">${n.check}</span></span>
         <span class="t-main">
-          <span class="row-title">${a.title}</span>
-          <span class="row-sub" style="${a.overdue?"color:var(--overdue);font-weight:600":""}">${a.overdue?"Overdue \xB7 yesterday":"Due today"}</span>
+          <span class="row-title">${s.title}</span>
+          <span class="row-sub" style="${s.overdue?"color:var(--overdue);font-weight:600":""}">${s.overdue?"Overdue \xB7 yesterday":"Due today"}</span>
         </span>
-      </button>`).join(""),s}p("home",{kind:"root",render:()=>({html:`
+      </button>`).join(""),a}u("home",{kind:"root",render:()=>({html:`
     <div class="screen-body" style="padding-top:6px">
       <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:2px">
-        <button class="chip-btn" data-go="graph" aria-label="Context graph">${o.network}</button>
+        <button class="chip-btn" data-go="graph" aria-label="Context graph">${n.network}</button>
         <button class="chip-btn" data-go="settings" aria-label="Settings"><span style="font-size:14px;font-weight:650">${E.initials}</span></button>
       </div>
       <div class="stagger">
@@ -1688,13 +1823,13 @@ svg {
         <hr class="section-rule" />
         <div>
           ${c("Today","All tasks \u2192|tasks")}
-          ${De()}
+          ${Be()}
         </div>
 
         <hr class="section-rule" />
         <div>
           ${c("Meetings","All day \u2192|recorder")}
-          ${F.filter(e=>e.done).slice(0,2).map(e=>g({icon:o.people,title:e.title,sub:`${e.time} \xB7 ${e.actions} action item${e.actions===1?"":"s"} \xB7 ${je(e.people[0])}`,go:"memory:m1"})).join("")}
+          ${F.filter(e=>e.done).slice(0,2).map(e=>g({icon:n.people,title:e.title,sub:`${e.time} \xB7 ${e.actions} action item${e.actions===1?"":"s"} \xB7 ${Ie(e.people[0])}`,go:"memory:m1"})).join("")}
         </div>
 
         <hr class="section-rule" />
@@ -1709,38 +1844,38 @@ svg {
         ${f()}
       </div>
     </div>
-    ${ue("home")}`})});var Ie=[["home",o.house,"Home",""],["tasks",o.checklist,"Tasks","4 open"],["memories",o.quote,"Memories","128"],["people",o.people,"People","42"],["docs",o.doc,"Documents","12"],["graph",o.network,"Graph",""],["meals",o.meal,"Meals","1,460 kcal"],["workouts",o.dumbbell,"Workouts","1 today"],["expenses",o.dollar,"Expenses","$36.50"],["streaks",o.flame,"Streaks","12 d"],["agents",o.shield,"Agents","2 paired"],["settings",o.gear,"Settings",""]];p("launcher",{sheet:!0,render:()=>{let e=A(`
+    ${ue("home")}`})});var Ne=[["home",n.house,"Home",""],["tasks",n.checklist,"Tasks","4 open"],["memories",n.quote,"Memories","128"],["people",n.people,"People","42"],["docs",n.doc,"Documents","12"],["graph",n.network,"Graph",""],["meals",n.meal,"Meals","1,460 kcal"],["workouts",n.dumbbell,"Workouts","1 today"],["expenses",n.dollar,"Expenses","$36.50"],["streaks",n.flame,"Streaks","12 d"],["agents",n.shield,"Agents","2 paired"],["settings",n.gear,"Settings",""]];u("launcher",{sheet:!0,render:()=>{let e=z(`
       <div class="sheet-title-row">
         <span class="title">Launcher</span>
         <button class="text-btn" data-sheet-close>Done</button>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding-bottom:8px">
-        ${Ie.map(([t,s,a,i])=>`
+        ${Ne.map(([t,a,s,o])=>`
           <button class="card card-press" data-go="${t}" data-launch style="min-height:92px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:13px">
-            <span class="row-icon" style="width:30px;height:30px;border-radius:9px">${s}</span>
+            <span class="row-icon" style="width:30px;height:30px;border-radius:9px">${a}</span>
             <span>
-              <span style="display:block;font-size:13px;font-weight:650">${a}</span>
-              ${i?`<span class="mono" style="font-size:10px;color:var(--text-4)">${i}</span>`:""}
+              <span style="display:block;font-size:13px;font-weight:650">${s}</span>
+              ${o?`<span class="mono" style="font-size:10px;color:var(--text-4)">${o}</span>`:""}
             </span>
           </button>`).join("")}
-      </div>`);e.el.addEventListener("click",t=>{t.target.closest("[data-launch]")&&e.close()})}});p("capture",{kind:"cover",render:()=>({html:'<div class="screen-body" id="capture-stage" style="display:flex;flex-direction:column;padding-top:10px;padding-bottom:34px"></div>',onMount:e=>{let t=e.querySelector("#capture-stage"),s=null,a=()=>{t.innerHTML=`
+      </div>`);e.el.addEventListener("click",t=>{t.target.closest("[data-launch]")&&e.close()})}});u("capture",{kind:"cover",render:()=>({html:'<div class="screen-body" id="capture-stage" style="display:flex;flex-direction:column;padding-top:10px;padding-bottom:34px"></div>',onMount:e=>{let t=e.querySelector("#capture-stage"),a=null,s=()=>{t.innerHTML=`
           <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:26px">
             <span class="rec-dot"></span>
             <span class="mono" style="font-size:12.5px;letter-spacing:0.28em;color:var(--sky);font-weight:500">RECORDING</span>
           </div>
           <div class="mono center" id="cap-timer" style="font-size:54px;font-weight:500;letter-spacing:-2px;margin-top:16px">0:00</div>
           <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
-            ${N(42,!0,170)}
+            ${H(42,!0,170)}
             <p class="meta center" id="cap-live" style="min-height:44px;margin-top:22px;padding:0 8px"></p>
           </div>
           <div style="display:flex;align-items:center;justify-content:center;gap:30px">
-            <button class="chip-btn" style="width:52px;height:52px" aria-label="Type instead">${o.keyboard}</button>
+            <button class="chip-btn" style="width:52px;height:52px" aria-label="Type instead">${n.keyboard}</button>
             <button class="capture-mark" data-cap="stop" style="width:92px;height:92px;border-radius:50%;box-shadow:0 8px 34px rgba(56,189,248,0.45)" aria-label="Stop">
               <span style="width:30px;height:30px;border-radius:9px;background:var(--on-accent)"></span>
             </button>
-            <button class="chip-btn" style="width:52px;height:52px" aria-label="Add photo">${o.camera}</button>
+            <button class="chip-btn" style="width:52px;height:52px" aria-label="Add photo">${n.camera}</button>
           </div>
-          <button class="text-btn" data-nav="back" style="margin:16px auto 0;display:block">Cancel</button>`;let l=0,r=t.querySelector("#cap-timer");s=setInterval(()=>{if(!r.isConnected)return clearInterval(s);l++,r.textContent=`${Math.floor(l/60)}:${String(l%60).padStart(2,"0")}`},1e3);let u="Had the design review with Maya \u2014 we locked the onboarding flow, she\u2019ll send revised comps Thursday. I owe her the launch notes\u2026 and log lunch, chicken rice bowl, about six forty calories.".split(" "),y=t.querySelector("#cap-live"),k=0,B=setInterval(()=>{if(!y.isConnected)return clearInterval(B);y.textContent=u.slice(Math.max(0,k-18),++k).join(" "),k>=u.length&&clearInterval(B)},260)},i=()=>{clearInterval(s),t.innerHTML=`
+          <button class="text-btn" data-nav="back" style="margin:16px auto 0;display:block">Cancel</button>`;let l=0,r=t.querySelector("#cap-timer");a=setInterval(()=>{if(!r.isConnected)return clearInterval(a);l++,r.textContent=`${Math.floor(l/60)}:${String(l%60).padStart(2,"0")}`},1e3);let p="Had the design review with Maya \u2014 we locked the onboarding flow, she\u2019ll send revised comps Thursday. I owe her the launch notes\u2026 and log lunch, chicken rice bowl, about six forty calories.".split(" "),y=t.querySelector("#cap-live"),k=0,B=setInterval(()=>{if(!y.isConnected)return clearInterval(B);y.textContent=p.slice(Math.max(0,k-18),++k).join(" "),k>=p.length&&clearInterval(B)},260)},o=()=>{clearInterval(a),t.innerHTML=`
           <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px">
             ${v({size:96,pose:"thinking",heart:.72})}
             <span class="mono eyebrow" style="letter-spacing:0.24em">Creating your memory</span>
@@ -1749,17 +1884,17 @@ svg {
               <span class="skel" style="width:7px;height:7px;border-radius:50%"></span>
               <span class="skel" style="width:7px;height:7px;border-radius:50%"></span>
             </div>
-          </div>`,setTimeout(n,1800)},n=()=>{t.innerHTML=`
+          </div>`,setTimeout(i,1800)},i=()=>{t.innerHTML=`
           <div class="stagger" style="padding-top:14px">
             <div class="eyebrow mono">Saved \xB7 3:41 PM \xB7 On device</div>
             <h1 class="display" style="margin-top:10px">Two things came out of that.</h1>
             <div class="card" style="margin-top:18px">
               <div style="font-size:15.5px;line-height:1.5">Design review with Maya \u2014 locked the onboarding flow; revised comps Thursday. You owe her the launch notes.</div>
-              <div class="micro" style="margin-top:9px;display:flex;align-items:center;gap:5px">${o.wand} Cleaned up \xB7 original kept</div>
+              <div class="micro" style="margin-top:9px;display:flex;align-items:center;gap:5px">${n.wand} Cleaned up \xB7 original kept</div>
             </div>
             <div class="eyebrow" style="margin-top:22px">Extracted</div>
             <div class="card card-press" data-go="task:t1" style="margin-top:9px;display:flex;align-items:center;gap:12px">
-              <span class="row-icon">${o.checklist}</span>
+              <span class="row-icon">${n.checklist}</span>
               <span style="flex:1">
                 <span style="display:block;font-size:14.5px;font-weight:650">Send Maya the launch notes</span>
                 <span class="micro">Task \xB7 from this memory</span>
@@ -1767,7 +1902,7 @@ svg {
               <span class="row-value mono">TOMORROW</span>
             </div>
             <div class="card card-press" data-go="meals" style="margin-top:9px;display:flex;align-items:center;gap:12px">
-              <span class="row-icon">${o.meal}</span>
+              <span class="row-icon">${n.meal}</span>
               <span style="flex:1">
                 <span style="display:block;font-size:14.5px;font-weight:650">Chicken rice bowl</span>
                 <span class="micro">Meal \xB7 from this memory</span>
@@ -1784,39 +1919,39 @@ svg {
               <button class="cta" data-cap="done" style="flex:1">Done</button>
               <button class="cta cta-outline" data-go="memory:m1" style="flex:1">Open</button>
             </div>
-          </div>`};e.addEventListener("click",l=>{let r=l.target.closest("[data-cap]");r&&(r.dataset.cap==="stop"&&i(),r.dataset.cap==="done"&&ee())}),a()}})});var Be=["What did we decide with Maya?","What did I promise to follow up on?","What did I log this week?"];p("ask",{kind:"cover",render:()=>({html:`
+          </div>`};e.addEventListener("click",l=>{let r=l.target.closest("[data-cap]");r&&(r.dataset.cap==="stop"&&o(),r.dataset.cap==="done"&&ee())}),s()}})});var He=["What did we decide with Maya?","What did I promise to follow up on?","What did I log this week?"];u("ask",{kind:"cover",render:()=>({html:`
     <div class="ctx-header">
-      <button class="chip-btn" data-nav="back" aria-label="Close">${o.chevD}</button>
+      <button class="chip-btn" data-nav="back" aria-label="Close">${n.chevD}</button>
       <div class="h-title">${j.askTitle}</div>
-      <span class="badge sky-badge">${o.iphone} On device</span>
+      <span class="badge sky-badge">${n.iphone} On device</span>
     </div>
     <div class="screen-body" id="ask-stage" style="padding-bottom:120px"></div>
     <div style="position:absolute;left:0;right:0;bottom:0;padding:14px var(--gutter) calc(env(safe-area-inset-bottom,0px) + 18px);background:linear-gradient(transparent, var(--bg) 34%)">
       <div style="display:flex;align-items:flex-end;gap:9px;background:var(--surface-1);border:0.5px solid var(--line-strong);border-radius:23px;padding:8px 8px 8px 17px;box-shadow:var(--shadow-card)">
         <input id="ask-input" placeholder="${j.askPlaceholder}" style="flex:1;font-size:15.5px;padding:8px 0" />
-        <button id="ask-send" class="cta-compact" style="width:38px;height:38px;padding:0;border-radius:50%;justify-content:center" aria-label="Ask">${o.arrowUp}</button>
+        <button id="ask-send" class="cta-compact" style="width:38px;height:38px;padding:0;border-radius:50%;justify-content:center" aria-label="Ask">${n.arrowUp}</button>
       </div>
-    </div>`,onMount:e=>{let t=e.querySelector("#ask-stage"),s=e.querySelector("#ask-input"),a=()=>{t.innerHTML=`
+    </div>`,onMount:e=>{let t=e.querySelector("#ask-stage"),a=e.querySelector("#ask-input"),s=()=>{t.innerHTML=`
           <div class="stagger" style="padding-top:22px">
             <div class="center">${v({size:66,pose:"idle",heart:.8})}</div>
             <h1 class="display center" style="margin-top:16px">Ask your context</h1>
             <p class="body center" style="margin-top:8px">Search everything you\u2019ve kept, or ask a question and get an answer grounded in your own records.</p>
             <div class="eyebrow" style="margin-top:26px">Try asking</div>
             <div style="margin-top:8px">
-              ${Be.map(r=>`<button class="row" data-ask-q="${r}">
-                    <span class="row-icon sky-tile">${o.askGlyph}</span>
+              ${He.map(r=>`<button class="row" data-ask-q="${r}">
+                    <span class="row-icon sky-tile">${n.askGlyph}</span>
                     <span class="row-main"><span class="row-title">${r}</span></span>
                     <span class="row-end"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5.5 15.5 12 9 18.5"/></svg></span>
                   </button>`).join("")}
             </div>
             <div class="eyebrow" style="margin-top:24px">Browse</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:9px">
-              ${[["memories",o.quote,"Memories","128"],["tasks",o.checklist,"Tasks","4 open"],["people",o.people,"People","42"],["docs",o.doc,"Documents","12"]].map(([r,u,y,k])=>`<button class="card card-press" data-go="${r}" style="display:flex;align-items:center;gap:11px;padding:14px">
-                    <span class="row-icon" style="width:32px;height:32px;border-radius:10px">${u}</span>
+              ${[["memories",n.quote,"Memories","128"],["tasks",n.checklist,"Tasks","4 open"],["people",n.people,"People","42"],["docs",n.doc,"Documents","12"]].map(([r,p,y,k])=>`<button class="card card-press" data-go="${r}" style="display:flex;align-items:center;gap:11px;padding:14px">
+                    <span class="row-icon" style="width:32px;height:32px;border-radius:10px">${p}</span>
                     <span style="text-align:left"><span style="display:block;font-size:14px;font-weight:650">${y}</span><span class="mono micro">${k}</span></span>
                   </button>`).join("")}
             </div>
-          </div>`},i=r=>{t.innerHTML=`
+          </div>`},o=r=>{t.innerHTML=`
           <div style="padding-top:26px">
             <div class="card" style="border-radius:18px;padding:15px 17px;background:var(--surface-2);border:0;margin-bottom:22px">
               <span style="font-size:15.5px;font-weight:550">${r}</span>
@@ -1828,7 +1963,7 @@ svg {
               <div class="skel" style="height:15px;width:80%"></div>
               <div class="skel" style="height:15px;width:86%"></div>
             </div>
-          </div>`,setTimeout(()=>n(r),1700)},n=r=>{t.innerHTML=`
+          </div>`,setTimeout(()=>i(r),1700)},i=r=>{t.innerHTML=`
           <div class="stagger" style="padding-top:26px">
             <div class="card" style="border-radius:18px;padding:15px 17px;background:var(--surface-2);border:0">
               <span style="font-size:15.5px;font-weight:550">${r}</span>
@@ -1836,20 +1971,20 @@ svg {
             <div class="card" style="margin-top:14px;border-radius:18px;padding:18px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
                 <span style="display:flex;align-items:center;gap:9px">${v({size:28,pose:"happy",heart:.9})}<span class="eyebrow" style="color:var(--sky)">${x.agent}</span></span>
-                <span class="badge sky-badge">${o.iphone} On device</span>
+                <span class="badge sky-badge">${n.iphone} On device</span>
               </div>
               <div style="font-size:16px;line-height:1.55">${G.a}</div>
             </div>
             <div class="eyebrow" style="margin-top:20px">Sources</div>
             <div style="margin-top:6px">
-              ${G.sources.map(u=>`<button class="row" data-go="${u.go}">
-                    <span class="avatar" style="width:34px;height:34px;font-size:13px">${u.n}</span>
-                    <span class="row-main"><span class="row-title">${u.title}</span><span class="row-sub">${u.sub}</span></span>
+              ${G.sources.map(p=>`<button class="row" data-go="${p.go}">
+                    <span class="avatar" style="width:34px;height:34px;font-size:13px">${p.n}</span>
+                    <span class="row-main"><span class="row-title">${p.title}</span><span class="row-sub">${p.sub}</span></span>
                     <span class="row-end"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5.5 15.5 12 9 18.5"/></svg></span>
                   </button>`).join("")}
             </div>
             <p class="micro center" style="margin-top:18px">Answers come only from the records cited above.</p>
-          </div>`},l=r=>{r.trim()&&(s.value="",s.blur(),i(r.trim()))};e.addEventListener("click",r=>{let u=r.target.closest("[data-ask-q]");u&&l(u.dataset.askQ),r.target.closest("#ask-send")&&l(s.value||G.q)}),s.addEventListener("keydown",r=>{r.key==="Enter"&&l(s.value||G.q)}),a()}})});var Ne=e=>w.find(t=>t.id===e)?.name.split(" ")[0]||"";p("recorder",{kind:"push",render:()=>({html:`
+          </div>`},l=r=>{r.trim()&&(a.value="",a.blur(),o(r.trim()))};e.addEventListener("click",r=>{let p=r.target.closest("[data-ask-q]");p&&l(p.dataset.askQ),r.target.closest("#ask-send")&&l(a.value||G.q)}),a.addEventListener("keydown",r=>{r.key==="Enter"&&l(a.value||G.q)}),s()}})});var Oe=e=>w.find(t=>t.id===e)?.name.split(" ")[0]||"";u("recorder",{kind:"push",render:()=>({html:`
     ${h("Today\u2019s recording",{back:!0})}
     <div class="screen-body">
       <div class="hero-card" style="display:flex;align-items:center;gap:14px">
@@ -1861,7 +1996,7 @@ svg {
           </div>
           <div class="meta" style="margin-top:3px">Recording \xB7 <span class="mono" id="rec-clock">6:42:07</span></div>
         </div>
-        <span class="badge sky-badge">${o.iphone} On device</span>
+        <span class="badge sky-badge">${n.iphone} On device</span>
       </div>
 
       <div class="eyebrow" style="margin-top:26px;margin-bottom:12px">Meeting to meeting</div>
@@ -1873,16 +2008,16 @@ svg {
               <span style="flex:1">
                 <span style="display:block;font-size:15.5px;font-weight:${e.live?"650":"550"};${e.live?"color:var(--sky)":""}">${e.title}</span>
                 <span class="micro" style="display:block;margin-top:2px">
-                  ${e.live?"Recording now \xB7 Priya auto-tagged":`${e.mins} min \xB7 ${e.actions} action item${e.actions===1?"":"s"} \xB7 ${Ne(e.people[0])} tagged`}
+                  ${e.live?"Recording now \xB7 Priya auto-tagged":`${e.mins} min \xB7 ${e.actions} action item${e.actions===1?"":"s"} \xB7 ${Oe(e.people[0])} tagged`}
                 </span>
               </span>
-              ${e.done?`<span class="check-ctl done" style="width:20px;height:20px">${o.check}</span>`:""}
+              ${e.done?`<span class="check-ctl done" style="width:20px;height:20px">${n.check}</span>`:""}
             </div>
           </button>`).join("")}
       </div>
 
       <div class="card" style="margin-top:24px;display:flex;gap:12px;align-items:flex-start">
-        <span class="row-icon sky-tile" style="flex:none">${o.lock}</span>
+        <span class="row-icon sky-tile" style="flex:none">${n.lock}</span>
         <div>
           <div style="font-size:14px;font-weight:650">Raw audio never leaves this device</div>
           <div class="micro" style="margin-top:4px;line-height:1.45">${x.agent} transcribes on your phone as the day runs. People are tagged from your contacts. Decisions and action items are saved to each meeting\u2019s memory.</div>
@@ -1890,13 +2025,13 @@ svg {
       </div>
       ${f("Transcribed on this device")}
     </div>
-    ${M("Stop for today")}`,onMount:e=>{let t=e.querySelector("#rec-clock"),s=6*3600+2520+7,a=setInterval(()=>{if(!t.isConnected)return clearInterval(a);s++,t.textContent=`${Math.floor(s/3600)}:${String(Math.floor(s%3600/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`},1e3)}})});var He={"g-design":"memory:m1","g-client":"recorder","g-maya":"person:maya","g-priya":"person:priya","g-run":"workouts","g-meal":"meals","g-week":"streaks","g-brief":"doc:d1","g-terms":"doc:d2"};p("graph",{kind:"push",render:()=>({html:`
+    ${M("Stop for today")}`,onMount:e=>{let t=e.querySelector("#rec-clock"),a=6*3600+2520+7,s=setInterval(()=>{if(!t.isConnected)return clearInterval(s);a++,t.textContent=`${Math.floor(a/3600)}:${String(Math.floor(a%3600/60)).padStart(2,"0")}:${String(a%60).padStart(2,"0")}`},1e3)}})});var Re={"g-design":"memory:m1","g-client":"recorder","g-maya":"person:maya","g-priya":"person:priya","g-run":"workouts","g-meal":"meals","g-week":"streaks","g-brief":"doc:d1","g-terms":"doc:d2"};u("graph",{kind:"push",render:()=>({html:`
     ${h("Your graph",{back:!0})}
     <div class="screen-body" style="display:flex;flex-direction:column;padding-bottom:110px">
       <p class="meta">Meetings tag your people. Logs join your days. Documents link to both. One living graph of everything that\u2019s you \u2014 on your device.</p>
       <div class="graph-stage" id="graph-stage" style="flex:1;margin-top:8px">
         <svg class="edges" id="graph-edges" preserveAspectRatio="none"></svg>
-        ${_.map(e=>{let t=e.icon.startsWith("av:")?e.icon.slice(3):o[e.icon]||"";return`<button class="graph-node" data-go="${He[e.id]||""}" style="left:${e.x}%;top:${e.y}%">
+        ${_.map(e=>{let t=e.icon.startsWith("av:")?e.icon.slice(3):n[e.icon]||"";return`<button class="graph-node" data-go="${Re[e.id]||""}" style="left:${e.x}%;top:${e.y}%">
               <span class="gn-tile">${t}</span>
               <span class="gn-label">${e.label}</span>
             </button>`}).join("")}
@@ -1905,23 +2040,23 @@ svg {
         </div>
       </div>
       <div class="center" style="padding-top:6px">
-        <span class="badge sky-badge">${o.iphone} Everything that\u2019s you \u2014 on your device</span>
+        <span class="badge sky-badge">${n.iphone} Everything that\u2019s you \u2014 on your device</span>
       </div>
       <p class="micro center" style="margin-top:10px">Available to the agents you choose. Nothing more.</p>
-    </div>`,onMount:e=>{let t=e.querySelector("#graph-stage"),s=e.querySelector("#graph-edges"),a=()=>{let i=t.clientWidth,n=t.clientHeight;if(!i)return;s.setAttribute("viewBox",`0 0 ${i} ${n}`);let l=Object.fromEntries(_.map(y=>[y.id,[y.x/100*i,y.y/100*n]])),r=[.5*i,.46*n+14],u="";for(let[y,k]of me){let[B,ze]=l[y],[Ee,Pe]=l[k];u+=`<line x1="${B}" y1="${ze}" x2="${Ee}" y2="${Pe}" stroke="var(--line-strong)" stroke-width="1.4"/>`}for(let y of _){let[k,B]=l[y.id];u+=`<line x1="${k}" y1="${B}" x2="${r[0]}" y2="${r[1]}" stroke="var(--sky-line)" stroke-width="1.1" stroke-dasharray="3 5"/>`}s.innerHTML=u};requestAnimationFrame(a),window.addEventListener("resize",a,{passive:!0})}})});var Oe=[{time:"6:52 PM",kind:"Thought",folder:"ideas",text:"Northwind pricing should anchor on seats, not usage \u2014 Priya kept translating everything back to headcount on the call.",value:""},{time:"9:10 AM",kind:"Logged expense",folder:null,text:"Coffee and a croissant before the standup.",value:"$8.20"}];function oe(e){let t=[e.kind];e.value&&t.push(`<span class="mono">${e.value}</span>`);let s=e.folder||"";return`<button class="trow" data-go="memory:m1" data-folder="${s}">
+    </div>`,onMount:e=>{let t=e.querySelector("#graph-stage"),a=e.querySelector("#graph-edges"),s=()=>{let o=t.clientWidth,i=t.clientHeight;if(!o)return;a.setAttribute("viewBox",`0 0 ${o} ${i}`);let l=Object.fromEntries(_.map(y=>[y.id,[y.x/100*o,y.y/100*i]])),r=[.5*o,.46*i+14],p="";for(let[y,k]of me){let[B,Pe]=l[y],[qe,je]=l[k];p+=`<line x1="${B}" y1="${Pe}" x2="${qe}" y2="${je}" stroke="var(--line-strong)" stroke-width="1.4"/>`}for(let y of _){let[k,B]=l[y.id];p+=`<line x1="${k}" y1="${B}" x2="${r[0]}" y2="${r[1]}" stroke="var(--sky-line)" stroke-width="1.1" stroke-dasharray="3 5"/>`}a.innerHTML=p};requestAnimationFrame(s),window.addEventListener("resize",s,{passive:!0})}})});var Fe=[{time:"6:52 PM",kind:"Thought",folder:"ideas",text:"Northwind pricing should anchor on seats, not usage \u2014 Priya kept translating everything back to headcount on the call.",value:""},{time:"9:10 AM",kind:"Logged expense",folder:null,text:"Coffee and a croissant before the standup.",value:"$8.20"}];function oe(e){let t=[e.kind];e.value&&t.push(`<span class="mono">${e.value}</span>`);let a=e.folder||"";return`<button class="trow" data-go="memory:m1" data-folder="${a}">
     <span class="t-time mono">${e.time}</span>
     <span class="t-main">
       <span class="row-title">${e.text}</span>
-      <span class="row-sub">${t.join(" \xB7 ")}${s?` \xB7 <span class="mono">#${s}</span>`:""}</span>
+      <span class="row-sub">${t.join(" \xB7 ")}${a?` \xB7 <span class="mono">#${a}</span>`:""}</span>
     </span>
-  </button>`}p("memories",{kind:"push",render:()=>({html:`
-    ${h("Memories",{back:!0,actions:$(o.search,"","Search")})}
+  </button>`}u("memories",{kind:"push",render:()=>({html:`
+    ${h("Memories",{back:!0,actions:$(n.search,"","Search")})}
     <div class="screen-body">
       <div class="pill-row">
         <button class="pill on" data-filter="all">All</button>
         <button class="pill" data-filter="work">#work</button>
         <button class="pill" data-filter="ideas">#ideas</button>
-        <button class="chip-btn" style="width:36px;height:36px;margin-left:auto" aria-label="Calendar">${o.calendar}</button>
+        <button class="chip-btn" style="width:36px;height:36px;margin-left:auto" aria-label="Calendar">${n.calendar}</button>
       </div>
 
       <div class="stagger">
@@ -1934,12 +2069,12 @@ svg {
         <div>
           ${c("Thursday 31 July")}
           ${se.filter(e=>e.time==="Yesterday").map(e=>oe({...e,time:"1:02 PM"})).join("")}
-          ${Oe.map(oe).join("")}
+          ${Fe.map(oe).join("")}
         </div>
       </div>
       ${f()}
-    </div>`,onMount:e=>{let t=e.querySelectorAll(".pill-row .pill"),s=e.querySelectorAll("[data-folder]");t.forEach(a=>a.addEventListener("click",()=>{t.forEach(n=>n.classList.remove("on")),a.classList.add("on");let i=a.dataset.filter;s.forEach(n=>{n.style.display=i==="all"||n.dataset.folder===i?"":"none"})}))}})});var he="Design review with Maya \u2014 locked the onboarding flow, she\u2019ll send revised comps by Thursday. Two open questions on the empty states.",Re="so yeah we did the design review with maya um basically we locked in the onboarding flow she said she\u2019ll send revised comps by thursday and there\u2019s still like two open questions on the empty states i think";p("memory",{kind:"push",render:()=>({html:`
-    ${h("Memory",{back:!0,actions:$(o.sparkles,'style="color:var(--sky)"',"AI insights")})}
+    </div>`,onMount:e=>{let t=e.querySelectorAll(".pill-row .pill"),a=e.querySelectorAll("[data-folder]");t.forEach(s=>s.addEventListener("click",()=>{t.forEach(i=>i.classList.remove("on")),s.classList.add("on");let o=s.dataset.filter;a.forEach(i=>{i.style.display=o==="all"||i.dataset.folder===o?"":"none"})}))}})});var he="Design review with Maya \u2014 locked the onboarding flow, she\u2019ll send revised comps by Thursday. Two open questions on the empty states.",Ye="so yeah we did the design review with maya um basically we locked in the onboarding flow she said she\u2019ll send revised comps by thursday and there\u2019s still like two open questions on the empty states i think";u("memory",{kind:"push",render:()=>({html:`
+    ${h("Memory",{back:!0,actions:$(n.sparkles,'style="color:var(--sky)"',"AI insights")})}
     <div class="screen-body">
       <div class="stagger">
         <div style="display:flex;align-items:center;gap:8px">
@@ -1953,11 +2088,11 @@ svg {
               <button class="pill on" data-mode="enhanced">Enhanced</button>
               <button class="pill" data-mode="raw">Raw</button>
             </div>
-            <button class="chip-btn" id="mem-copy" style="width:34px;height:34px" aria-label="Copy transcript">${o.copy}</button>
+            <button class="chip-btn" id="mem-copy" style="width:34px;height:34px" aria-label="Copy transcript">${n.copy}</button>
           </div>
           <div class="body t1" id="mem-text" style="font-size:15.5px">${he}</div>
           <div style="margin-top:14px">
-            <span class="badge sky-badge">${o.iphone} On-device</span>
+            <span class="badge sky-badge">${n.iphone} On-device</span>
           </div>
         </div>
 
@@ -1965,8 +2100,8 @@ svg {
         <div>
           ${c("Audio")}
           <div class="card" style="display:flex;align-items:center;gap:12px">
-            <button class="chip-btn" style="width:36px;height:36px;background:var(--accent);color:var(--on-accent);border:0" aria-label="Play">${o.play}</button>
-            <div style="flex:1">${N(30,!1,44)}</div>
+            <button class="chip-btn" style="width:36px;height:36px;background:var(--accent);color:var(--on-accent);border:0" aria-label="Play">${n.play}</button>
+            <div style="flex:1">${H(30,!1,44)}</div>
             <span class="mono micro">0:47</span>
           </div>
         </div>
@@ -1992,7 +2127,7 @@ svg {
         <div>
           ${c("Extracted")}
           <div class="card card-press" data-go="task:t1" style="display:flex;align-items:center;gap:12px">
-            <span class="row-icon">${o.checklist}</span>
+            <span class="row-icon">${n.checklist}</span>
             <span style="flex:1">
               <span style="display:block;font-size:14.5px;font-weight:650">Send Maya the launch notes</span>
               <span class="micro">Task \xB7 from this memory</span>
@@ -2000,7 +2135,7 @@ svg {
             <span class="row-value mono">TODAY</span>
           </div>
           <div class="card card-press" data-go="meals" style="margin-top:9px;display:flex;align-items:center;gap:12px">
-            <span class="row-icon">${o.meal}</span>
+            <span class="row-icon">${n.meal}</span>
             <span style="flex:1">
               <span style="display:block;font-size:14.5px;font-weight:650">Chicken rice bowl</span>
               <span class="micro">Meal \xB7 from this memory</span>
@@ -2022,20 +2157,20 @@ svg {
       </div>
       ${f()}
     </div>
-    ${M("Update")}`,onMount:e=>{let t=e.querySelectorAll("#mem-toggle .pill"),s=e.querySelector("#mem-text");t.forEach(n=>n.addEventListener("click",()=>{t.forEach(l=>l.classList.remove("on")),n.classList.add("on"),s.textContent=n.dataset.mode==="raw"?Re:he}));let a=e.querySelector("#mem-copy");a?.addEventListener("click",()=>{navigator.clipboard?.writeText(s.textContent).catch(()=>{}),a.innerHTML=o.check,setTimeout(()=>a.innerHTML=o.copy,1200)});let i=e.querySelector("#priya-suggest");i?.addEventListener("click",n=>{let l=n.target.closest("[data-suggest]")?.dataset.suggest;l==="link"?(i.querySelector(".row-end").innerHTML='<span class="badge sky-badge">Linked</span>',i.querySelector(".row-sub").textContent="Client \xB7 Northwind"):l==="dismiss"&&i.remove()})}})});var ne=[{id:"td1",title:"Confirm offsite dates with the team",due:"Mon",state:"done",pri:"med",project:"Ops",steps:null,overdue:!1},{id:"td2",title:"Renew App Store developer account",due:"Last week",state:"done",pri:"low",project:null,steps:null,overdue:!1}],ie=[...S,...ne].reduce((e,t)=>(e[t.id]=t,e),{});function fe(e){return e.overdue?"Overdue \xB7 yesterday":e.due==="Today"?"Due today":e.due?`Due ${e.due}`:"No due date"}function W(e,t=!1){let s=t||e.state==="done",a=e.steps?`<span class="mono-chip">${e.steps[0]}/${e.steps[1]}</span>`:"",i=e.pri==="high"&&!s?'<span style="color:var(--bad);font-weight:700;margin-right:3px">\u203C</span>':"",n=[e.project,fe(e)].filter(Boolean).join(" \xB7 ");return`<div class="row" data-go="task:${e.id}" style="cursor:pointer">
-    <button class="check-ctl ${s?"done":""}" data-check="${e.id}" aria-label="Toggle done">${o.check}</button>
+    ${M("Update")}`,onMount:e=>{let t=e.querySelectorAll("#mem-toggle .pill"),a=e.querySelector("#mem-text");t.forEach(i=>i.addEventListener("click",()=>{t.forEach(l=>l.classList.remove("on")),i.classList.add("on"),a.textContent=i.dataset.mode==="raw"?Ye:he}));let s=e.querySelector("#mem-copy");s?.addEventListener("click",()=>{navigator.clipboard?.writeText(a.textContent).catch(()=>{}),s.innerHTML=n.check,setTimeout(()=>s.innerHTML=n.copy,1200)});let o=e.querySelector("#priya-suggest");o?.addEventListener("click",i=>{let l=i.target.closest("[data-suggest]")?.dataset.suggest;l==="link"?(o.querySelector(".row-end").innerHTML='<span class="badge sky-badge">Linked</span>',o.querySelector(".row-sub").textContent="Client \xB7 Northwind"):l==="dismiss"&&o.remove()})}})});var ie=[{id:"td1",title:"Confirm offsite dates with the team",due:"Mon",state:"done",pri:"med",project:"Ops",steps:null,overdue:!1},{id:"td2",title:"Renew App Store developer account",due:"Last week",state:"done",pri:"low",project:null,steps:null,overdue:!1}],ne=[...S,...ie].reduce((e,t)=>(e[t.id]=t,e),{});function fe(e){return e.overdue?"Overdue \xB7 yesterday":e.due==="Today"?"Due today":e.due?`Due ${e.due}`:"No due date"}function W(e,t=!1){let a=t||e.state==="done",s=e.steps?`<span class="mono-chip">${e.steps[0]}/${e.steps[1]}</span>`:"",o=e.pri==="high"&&!a?'<span style="color:var(--bad);font-weight:700;margin-right:3px">\u203C</span>':"",i=[e.project,fe(e)].filter(Boolean).join(" \xB7 ");return`<div class="row" data-go="task:${e.id}" style="cursor:pointer">
+    <button class="check-ctl ${a?"done":""}" data-check="${e.id}" aria-label="Toggle done">${n.check}</button>
     <span class="row-main">
-      <span class="row-title" style="${s?"text-decoration:line-through;color:var(--text-4)":""}">${i}${e.title}</span>
-      <span class="row-sub">${n}</span>
+      <span class="row-title" style="${a?"text-decoration:line-through;color:var(--text-4)":""}">${o}${e.title}</span>
+      <span class="row-sub">${i}</span>
     </span>
-    <span class="row-end">${a}</span>
-  </div>`}function ve(e){if(e==="today"){let t=S.filter(a=>a.overdue),s=S.filter(a=>a.due==="Today"&&!a.overdue);return`
-      ${t.length?`<div class="sec"><span class="eyebrow" style="color:var(--overdue)">Overdue</span></div>${t.map(a=>W(a)).join("")}`:""}
+    <span class="row-end">${s}</span>
+  </div>`}function ve(e){if(e==="today"){let t=S.filter(s=>s.overdue),a=S.filter(s=>s.due==="Today"&&!s.overdue);return`
+      ${t.length?`<div class="sec"><span class="eyebrow" style="color:var(--overdue)">Overdue</span></div>${t.map(s=>W(s)).join("")}`:""}
       ${t.length?'<hr class="section-rule" />':""}
       ${c("Due today")}
-      ${s.map(a=>W(a)).join("")}
-    `}return e==="inbox"?`${c("Inbox")}${["t4","t5"].map(t=>W(ie[t])).join("")}`:e==="all"?`${c("All tasks")}${S.map(t=>W(t)).join("")}`:`${c("Done")}${ne.map(t=>W(t,!0)).join("")}`}var ye={today:()=>S.filter(e=>e.due==="Today"||e.overdue).length,inbox:()=>2,all:()=>S.length,done:()=>ne.length},Fe={today:"today",inbox:"in inbox",all:"total",done:"done"};p("tasks",{kind:"push",render:()=>({html:`
-    ${h("Tasks",{back:!0,actions:$(o.ellipsis,"","Options")})}
+      ${a.map(s=>W(s)).join("")}
+    `}return e==="inbox"?`${c("Inbox")}${["t4","t5"].map(t=>W(ne[t])).join("")}`:e==="all"?`${c("All tasks")}${S.map(t=>W(t)).join("")}`:`${c("Done")}${ie.map(t=>W(t,!0)).join("")}`}var ye={today:()=>S.filter(e=>e.due==="Today"||e.overdue).length,inbox:()=>2,all:()=>S.length,done:()=>ie.length},Ge={today:"today",inbox:"in inbox",all:"total",done:"done"};u("tasks",{kind:"push",render:()=>({html:`
+    ${h("Tasks",{back:!0,actions:$(n.ellipsis,"","Options")})}
     <div class="screen-body">
       <div class="pill-row" id="task-tabs">
         <button class="pill on" data-tab="today">Today</button>
@@ -2049,57 +2184,57 @@ svg {
     <div style="position:absolute;left:0;right:0;bottom:0;padding:14px var(--gutter) calc(env(safe-area-inset-bottom,0px) + 18px);background:linear-gradient(transparent, var(--bg) 34%)">
       <div style="display:flex;align-items:center;gap:9px;background:var(--surface-1);border:0.5px solid var(--line-strong);border-radius:23px;padding:8px 8px 8px 17px;box-shadow:var(--shadow-card)">
         <input id="task-quickadd" placeholder="Add a task" style="flex:1;font-size:15.5px;padding:8px 0" />
-        <button class="chip-btn" data-go="capture" style="width:38px;height:38px;background:var(--accent);color:var(--on-accent);border:1.5px solid var(--sky-bright);box-shadow:0 4px 16px rgba(56,189,248,0.35)" aria-label="Capture with voice">${o.waveBars}</button>
-        <button class="cta-compact" id="task-add" style="width:38px;height:38px;padding:0;border-radius:50%;justify-content:center" aria-label="Add task">${o.arrowUp}</button>
+        <button class="chip-btn" data-go="capture" style="width:38px;height:38px;background:var(--accent);color:var(--on-accent);border:1.5px solid var(--sky-bright);box-shadow:0 4px 16px rgba(56,189,248,0.35)" aria-label="Capture with voice">${n.waveBars}</button>
+        <button class="cta-compact" id="task-add" style="width:38px;height:38px;padding:0;border-radius:50%;justify-content:center" aria-label="Add task">${n.arrowUp}</button>
       </div>
-    </div>`,onMount:e=>{let t=e.querySelector("#task-list"),s=e.querySelector("#task-count"),a=e.querySelectorAll("#task-tabs .pill"),i=r=>{a.forEach(u=>u.classList.toggle("on",u.dataset.tab===r)),t.innerHTML=ve(r),s.textContent=`${ye[r]()} ${Fe[r]}`};a.forEach(r=>r.addEventListener("click",()=>i(r.dataset.tab))),e.addEventListener("click",r=>{let u=r.target.closest("[data-check]");if(u){r.stopPropagation(),u.classList.toggle("done");let y=u.closest(".row")?.querySelector(".row-title");y&&(y.style.textDecoration=u.classList.contains("done")?"line-through":"none",y.style.color=u.classList.contains("done")?"var(--text-4)":"")}});let n=e.querySelector("#task-quickadd"),l=()=>{n.value.trim()&&(n.value="",n.blur())};e.querySelector("#task-add")?.addEventListener("click",l),n.addEventListener("keydown",r=>{r.key==="Enter"&&l()})}})});var Ye={t1:{steps:[{label:"Pull final logo lockups from Maya\u2019s comps",done:!0},{label:"Draft the one-pager summary",done:!0},{label:"Send with links to brief + specs",done:!1}],logged:{title:"Design review",sub:"Captured from Design review \xB7 3:41 PM",go:"memory:m1"},people:["maya"],activity:[{time:"3:41 PM",text:"Created from voice capture"},{time:"4:02 PM",text:"Step completed"}]},t2:{steps:[{label:"Read Alex\u2019s migration doc",done:!0},{label:"Flag risk areas",done:!1},{label:"Reply with go / no-go",done:!1},{label:"Schedule follow-up sync",done:!1}],people:["alex"],activity:[{time:"Yesterday",text:"Created"},{time:"9:14 AM",text:"Step completed"}]},t3:{people:["priya"],activity:[{time:"Tue",text:"Created from Client call"}]},t4:{activity:[{time:"Mon",text:"Created"}]},t5:{steps:[{label:"Outline sections",done:!1},{label:"Draft copy",done:!1},{label:"Review with Maya",done:!1}],people:["maya"],activity:[{time:"Last week",text:"Created"}]},td1:{activity:[{time:"Last Mon",text:"Completed"}]},td2:{activity:[{time:"Last week",text:"Completed"}]}};function Ge(e,t){if(t.steps)return t.steps;if(!e.steps)return null;let[s,a]=e.steps;return Array.from({length:a},(i,n)=>({label:`Step ${n+1}`,done:n<s}))}p("task",{kind:"push",render:e=>{let t=e&&ie[e]?e:"t1",s=ie[t],a=Ye[t]||{},i=Ge(s,a),n={high:"High priority",med:"Medium priority",low:"Low priority"}[s.pri]||"",l=s.state==="done"?"Done":s.state==="started"?"In progress":s.state==="backlog"?"Backlog":"To do";return{html:`
+    </div>`,onMount:e=>{let t=e.querySelector("#task-list"),a=e.querySelector("#task-count"),s=e.querySelectorAll("#task-tabs .pill"),o=r=>{s.forEach(p=>p.classList.toggle("on",p.dataset.tab===r)),t.innerHTML=ve(r),a.textContent=`${ye[r]()} ${Ge[r]}`};s.forEach(r=>r.addEventListener("click",()=>o(r.dataset.tab))),e.addEventListener("click",r=>{let p=r.target.closest("[data-check]");if(p){r.stopPropagation(),p.classList.toggle("done");let y=p.closest(".row")?.querySelector(".row-title");y&&(y.style.textDecoration=p.classList.contains("done")?"line-through":"none",y.style.color=p.classList.contains("done")?"var(--text-4)":"")}});let i=e.querySelector("#task-quickadd"),l=()=>{i.value.trim()&&(i.value="",i.blur())};e.querySelector("#task-add")?.addEventListener("click",l),i.addEventListener("keydown",r=>{r.key==="Enter"&&l()})}})});var We={t1:{steps:[{label:"Pull final logo lockups from Maya\u2019s comps",done:!0},{label:"Draft the one-pager summary",done:!0},{label:"Send with links to brief + specs",done:!1}],logged:{title:"Design review",sub:"Captured from Design review \xB7 3:41 PM",go:"memory:m1"},people:["maya"],activity:[{time:"3:41 PM",text:"Created from voice capture"},{time:"4:02 PM",text:"Step completed"}]},t2:{steps:[{label:"Read Alex\u2019s migration doc",done:!0},{label:"Flag risk areas",done:!1},{label:"Reply with go / no-go",done:!1},{label:"Schedule follow-up sync",done:!1}],people:["alex"],activity:[{time:"Yesterday",text:"Created"},{time:"9:14 AM",text:"Step completed"}]},t3:{people:["priya"],activity:[{time:"Tue",text:"Created from Client call"}]},t4:{activity:[{time:"Mon",text:"Created"}]},t5:{steps:[{label:"Outline sections",done:!1},{label:"Draft copy",done:!1},{label:"Review with Maya",done:!1}],people:["maya"],activity:[{time:"Last week",text:"Created"}]},td1:{activity:[{time:"Last Mon",text:"Completed"}]},td2:{activity:[{time:"Last week",text:"Completed"}]}};function Ue(e,t){if(t.steps)return t.steps;if(!e.steps)return null;let[a,s]=e.steps;return Array.from({length:s},(o,i)=>({label:`Step ${i+1}`,done:i<a}))}u("task",{kind:"push",render:e=>{let t=e&&ne[e]?e:"t1",a=ne[t],s=We[t]||{},o=Ue(a,s),i={high:"High priority",med:"Medium priority",low:"Low priority"}[a.pri]||"",l=a.state==="done"?"Done":a.state==="started"?"In progress":a.state==="backlog"?"Backlog":"To do";return{html:`
       ${h("Task",{back:!0})}
       <div class="screen-body">
         <div class="stagger">
           <div>
-            <h1 class="display">${s.title}</h1>
+            <h1 class="display">${a.title}</h1>
             <div style="margin-top:10px">
-              ${g({icon:o.checklist,title:l,sub:"Tap to change status"})}
+              ${g({icon:n.checklist,title:l,sub:"Tap to change status"})}
             </div>
           </div>
 
           <div style="display:flex;flex-wrap:wrap;gap:8px">
-            <span class="mono-chip" style="${s.overdue?"color:var(--overdue)":""}">${fe(s)}</span>
-            ${s.project?`<span class="mono-chip">${s.project} project</span>`:""}
-            ${n?`<span class="mono-chip" style="${s.pri==="high"?"color:var(--bad)":""}">${n}</span>`:""}
+            <span class="mono-chip" style="${a.overdue?"color:var(--overdue)":""}">${fe(a)}</span>
+            ${a.project?`<span class="mono-chip">${a.project} project</span>`:""}
+            ${i?`<span class="mono-chip" style="${a.pri==="high"?"color:var(--bad)":""}">${i}</span>`:""}
           </div>
 
-          ${i?`
+          ${o?`
           <hr class="section-rule" />
           <div>
             ${c("Steps")}
             <div id="step-list">
-              ${i.map((r,u)=>`
+              ${o.map((r,p)=>`
                 <div class="row" style="cursor:pointer">
-                  <button class="check-ctl ${r.done?"done":""}" data-check-step="${u}" aria-label="Toggle step">${o.check}</button>
+                  <button class="check-ctl ${r.done?"done":""}" data-check-step="${p}" aria-label="Toggle step">${n.check}</button>
                   <span class="row-main"><span class="row-title" style="${r.done?"text-decoration:line-through;color:var(--text-4)":""}">${r.label}</span></span>
                 </div>`).join("")}
             </div>
           </div>`:""}
 
-          ${a.logged?`
+          ${s.logged?`
           <hr class="section-rule" />
           <div>
             ${c("Logged")}
-            ${g({icon:o.quote,title:a.logged.title,sub:a.logged.sub,go:a.logged.go})}
+            ${g({icon:n.quote,title:s.logged.title,sub:s.logged.sub,go:s.logged.go})}
           </div>`:""}
 
-          ${a.people?`
+          ${s.people?`
           <hr class="section-rule" />
           <div>
             ${c("People")}
-            ${a.people.map(r=>{let u=w.find(y=>y.id===r);return u?g({avatar:u.initials,title:u.name,sub:u.role,go:`person:${r}`}):""}).join("")}
+            ${s.people.map(r=>{let p=w.find(y=>y.id===r);return p?g({avatar:p.initials,title:p.name,sub:p.role,go:`person:${r}`}):""}).join("")}
           </div>`:""}
 
           <hr class="section-rule" />
           <div>
             ${c("Activity")}
-            ${(a.activity||[{time:s.due||"\u2014",text:"Created"}]).map(r=>`
+            ${(s.activity||[{time:a.due||"\u2014",text:"Created"}]).map(r=>`
               <div class="trow">
                 <span class="t-time mono">${r.time}</span>
                 <span class="t-main"><span class="row-sub" style="font-size:13.5px;color:var(--text-2)">${r.text}</span></span>
@@ -2108,12 +2243,12 @@ svg {
         </div>
         ${f()}
       </div>
-      ${M("Update")}`,onMount:r=>{r.addEventListener("click",u=>{let y=u.target.closest("[data-check-step]");if(!y)return;y.classList.toggle("done");let k=y.closest(".row")?.querySelector(".row-title");k&&(k.style.textDecoration=y.classList.contains("done")?"line-through":"none",k.style.color=y.classList.contains("done")?"var(--text-4)":"")})}}}});p("people",{kind:"push",render:()=>({html:`
-    ${h("People",{back:!0,actions:$(o.ellipsis,"","Options")})}
+      ${M("Update")}`,onMount:r=>{r.addEventListener("click",p=>{let y=p.target.closest("[data-check-step]");if(!y)return;y.classList.toggle("done");let k=y.closest(".row")?.querySelector(".row-title");k&&(k.style.textDecoration=y.classList.contains("done")?"line-through":"none",k.style.color=y.classList.contains("done")?"var(--text-4)":"")})}}}});u("people",{kind:"push",render:()=>({html:`
+    ${h("People",{back:!0,actions:$(n.ellipsis,"","Options")})}
     <div class="screen-body">
       <div class="stagger">
         <div>
-          ${g({icon:o.iphone,title:"42 contacts indexed on this device",chev:!1})}
+          ${g({icon:n.iphone,title:"42 contacts indexed on this device",chev:!1})}
         </div>
 
         <hr class="section-rule" />
@@ -2129,22 +2264,22 @@ svg {
         </div>
       </div>
       ${f()}
-    </div>`})});var xe={maya:{facts:[{text:"Prefers async reviews",src:"You said this"},{text:"Owns launch design",src:"On-device AI \xB7 Strong inference"},{text:"Based in Lisbon",src:"Contacts import"}],relation:{text:"Works with Alex Rivera",go:"person:alex"},mentions:[{title:"Design review with Maya",sub:"Meeting \xB7 3:41 PM today"},{title:"Team lunch after the review",sub:"Memory \xB7 Yesterday"}],meeting:{title:"Design review",sub:"Today \xB7 11:30 AM"},taskId:"t1",docId:"d1"},priya:{facts:[{text:"Wants the pilot live in September",src:"You said this"},{text:"Needs 20 seats for the rollout",src:"On-device AI \xB7 Strong inference"},{text:"Northwind is HQ\u2019d in Toronto",src:"Contacts import"}],relation:{text:"Works with Daniel Kim",go:"person:dan"},mentions:[{title:"The pilot pricing should anchor on seats",sub:"Thought \xB7 11:02 AM today"},{title:"Client call \xB7 Northwind",sub:"Meeting \xB7 4:30 PM today"}],meeting:{title:"Client call \xB7 Northwind",sub:"Today \xB7 4:30 PM"},taskId:"t3",docId:"d2"}};p("person",{kind:"push",render:e=>{let t=e&&w.find(l=>l.id===e)?e:"maya",s=w.find(l=>l.id===t)||w.find(l=>l.id==="maya"),a=xe[t]||xe.maya,i=S.find(l=>l.id===a.taskId),n=H.find(l=>l.id===a.docId);return{html:`
-      ${h(s.name.split(" ")[0],{back:!0})}
+    </div>`})});var xe={maya:{facts:[{text:"Prefers async reviews",src:"You said this"},{text:"Owns launch design",src:"On-device AI \xB7 Strong inference"},{text:"Based in Lisbon",src:"Contacts import"}],relation:{text:"Works with Alex Rivera",go:"person:alex"},mentions:[{title:"Design review with Maya",sub:"Meeting \xB7 3:41 PM today"},{title:"Team lunch after the review",sub:"Memory \xB7 Yesterday"}],meeting:{title:"Design review",sub:"Today \xB7 11:30 AM"},taskId:"t1",docId:"d1"},priya:{facts:[{text:"Wants the pilot live in September",src:"You said this"},{text:"Needs 20 seats for the rollout",src:"On-device AI \xB7 Strong inference"},{text:"Northwind is HQ\u2019d in Toronto",src:"Contacts import"}],relation:{text:"Works with Daniel Kim",go:"person:dan"},mentions:[{title:"The pilot pricing should anchor on seats",sub:"Thought \xB7 11:02 AM today"},{title:"Client call \xB7 Northwind",sub:"Meeting \xB7 4:30 PM today"}],meeting:{title:"Client call \xB7 Northwind",sub:"Today \xB7 4:30 PM"},taskId:"t3",docId:"d2"}};u("person",{kind:"push",render:e=>{let t=e&&w.find(l=>l.id===e)?e:"maya",a=w.find(l=>l.id===t)||w.find(l=>l.id==="maya"),s=xe[t]||xe.maya,o=S.find(l=>l.id===s.taskId),i=O.find(l=>l.id===s.docId);return{html:`
+      ${h(a.name.split(" ")[0],{back:!0})}
       <div class="screen-body">
         <div class="stagger">
           <div style="text-align:center;padding:10px 0 4px">
-            <span class="avatar" style="width:56px;height:56px;font-size:20px;margin:0 auto">${s.initials}</span>
-            <div class="title" style="margin-top:12px">${s.name}</div>
-            <div class="meta" style="margin-top:2px">${s.role}</div>
+            <span class="avatar" style="width:56px;height:56px;font-size:20px;margin:0 auto">${a.initials}</span>
+            <div class="title" style="margin-top:12px">${a.name}</div>
+            <div class="meta" style="margin-top:2px">${a.role}</div>
           </div>
 
           <hr class="section-rule" />
           <div>
             ${c("What context knows")}
-            ${a.facts.map(l=>`
+            ${s.facts.map(l=>`
               <div class="row">
-                <span class="row-icon sky-tile">${o.sparkles}</span>
+                <span class="row-icon sky-tile">${n.sparkles}</span>
                 <span class="row-main">
                   <span class="row-title">${l.text}</span>
                   <span class="micro" style="display:block;margin-top:2px">${l.src}</span>
@@ -2155,47 +2290,47 @@ svg {
           <hr class="section-rule" />
           <div>
             ${c("Relationships")}
-            ${g({icon:o.people,title:a.relation.text,go:a.relation.go})}
+            ${g({icon:n.people,title:s.relation.text,go:s.relation.go})}
           </div>
 
           <hr class="section-rule" />
           <div>
             ${c("Mentioned in")}
-            ${a.mentions.map(l=>g({icon:o.quote,title:l.title,sub:l.sub,go:"memory:m1"})).join("")}
+            ${s.mentions.map(l=>g({icon:n.quote,title:l.title,sub:l.sub,go:"memory:m1"})).join("")}
           </div>
 
           <hr class="section-rule" />
           <div>
             ${c("Meetings")}
-            ${g({icon:o.calendar,title:a.meeting.title,sub:a.meeting.sub,go:"recorder"})}
+            ${g({icon:n.calendar,title:s.meeting.title,sub:s.meeting.sub,go:"recorder"})}
           </div>
+
+          ${o?`
+          <hr class="section-rule" />
+          <div>
+            ${c("Tasks")}
+            ${g({icon:n.checklist,title:o.title,sub:o.project?`${o.project} \xB7 ${o.due||"no due date"}`:o.due||"No due date",go:`task:${o.id}`})}
+          </div>`:""}
 
           ${i?`
           <hr class="section-rule" />
           <div>
-            ${c("Tasks")}
-            ${g({icon:o.checklist,title:i.title,sub:i.project?`${i.project} \xB7 ${i.due||"no due date"}`:i.due||"No due date",go:`task:${i.id}`})}
-          </div>`:""}
-
-          ${n?`
-          <hr class="section-rule" />
-          <div>
             ${c("Documents")}
-            ${g({icon:o.doc,title:n.name,sub:`${n.type} \xB7 ${n.date}`,go:`doc:${n.id}`})}
+            ${g({icon:n.doc,title:i.name,sub:`${i.type} \xB7 ${i.date}`,go:`doc:${i.id}`})}
           </div>`:""}
         </div>
         ${f()}
       </div>
-      ${M("Update")}`}}});var We=e=>e.id==="d3"?"identity":e.id==="d2"?"contracts":"people";function Ue(e){let t=e.person?w.find(s=>s.id===e.person):null;return`<div class="card card-press" data-go="doc:${e.id}" data-cat="${We(e)}" style="display:flex;gap:13px;align-items:flex-start;margin-bottom:10px;cursor:pointer">
-    <span class="row-icon" style="width:30px;height:30px;border-radius:9px;flex:none">${o.doc}</span>
+      ${M("Update")}`}}});var Ve=e=>e.id==="d3"?"identity":e.id==="d2"?"contracts":"people";function Je(e){let t=e.person?w.find(a=>a.id===e.person):null;return`<div class="card card-press" data-go="doc:${e.id}" data-cat="${Ve(e)}" style="display:flex;gap:13px;align-items:flex-start;margin-bottom:10px;cursor:pointer">
+    <span class="row-icon" style="width:30px;height:30px;border-radius:9px;flex:none">${n.doc}</span>
     <span style="flex:1;min-width:0">
       <span style="display:block;font-size:14.5px;font-weight:650">${e.name}</span>
       <span class="meta" style="display:block;margin-top:2px">${e.type} \xB7 ${e.date} \xB7 ${e.pages} page${e.pages===1?"":"s"}</span>
       <span class="meta" style="display:block;margin-top:4px">${e.summary}</span>
     </span>
     ${t?`<span class="avatar" style="width:24px;height:24px;font-size:10px;flex:none" title="${t.name}">${t.initials}</span>`:""}
-  </div>`}p("docs",{kind:"push",render:()=>({html:`
-    ${h("Documents",{back:!0,actions:$(o.plus,"","Add document")})}
+  </div>`}u("docs",{kind:"push",render:()=>({html:`
+    ${h("Documents",{back:!0,actions:$(n.plus,"","Add document")})}
     <div class="screen-body">
       <div class="pill-row">
         <button class="pill on" data-filter="all">All</button>
@@ -2204,10 +2339,10 @@ svg {
         <button class="pill" data-filter="people">People</button>
       </div>
       <div class="stagger">
-        <div id="doc-list">${H.map(Ue).join("")}</div>
+        <div id="doc-list">${O.map(Je).join("")}</div>
       </div>
       ${f()}
-    </div>`,onMount:e=>{let t=e.querySelectorAll(".pill-row .pill"),s=e.querySelectorAll("[data-cat]");t.forEach(a=>a.addEventListener("click",()=>{t.forEach(n=>n.classList.remove("on")),a.classList.add("on");let i=a.dataset.filter;s.forEach(n=>{n.style.display=i==="all"||n.dataset.cat===i?"":"none"})}))}})});p("doc",{kind:"push",render:e=>{let t=H.find(a=>a.id===e)||H[0],s=t.person?w.find(a=>a.id===t.person):null;return{html:`
+    </div>`,onMount:e=>{let t=e.querySelectorAll(".pill-row .pill"),a=e.querySelectorAll("[data-cat]");t.forEach(s=>s.addEventListener("click",()=>{t.forEach(i=>i.classList.remove("on")),s.classList.add("on");let o=s.dataset.filter;a.forEach(i=>{i.style.display=o==="all"||i.dataset.cat===o?"":"none"})}))}})});u("doc",{kind:"push",render:e=>{let t=O.find(s=>s.id===e)||O[0],a=t.person?w.find(s=>s.id===t.person):null;return{html:`
       ${h(t.name,{back:!0})}
       <div class="screen-body">
         <div class="stagger">
@@ -2219,7 +2354,7 @@ svg {
               <div><div class="micro">Pages</div><div class="mono" style="font-size:13px;font-weight:650;margin-top:3px">${t.pages}</div></div>
             </div>
             <div style="margin-top:14px">
-              <span class="badge sky-badge">${o.iphone} On-device</span>
+              <span class="badge sky-badge">${n.iphone} On-device</span>
             </div>
             <div class="micro" style="margin-top:8px">Profiled by ${t.engine==="On-device"?"Qwen 2.5":t.engine} \xB7 ${t.date}, 3:41 PM</div>
           </div>
@@ -2227,44 +2362,44 @@ svg {
           <hr class="section-rule" />
           <div>
             ${c("Key facts")}
-            ${t.facts.map((a,i)=>`
+            ${t.facts.map((s,o)=>`
               <div class="row">
-                <span class="row-icon">${o.check}</span>
-                <span class="row-main"><span class="row-title">${a}</span></span>
-                <span class="row-end"><button class="chip-btn" style="width:30px;height:30px" data-copy-fact="${i}" aria-label="Copy fact">${o.copy}</button></span>
+                <span class="row-icon">${n.check}</span>
+                <span class="row-main"><span class="row-title">${s}</span></span>
+                <span class="row-end"><button class="chip-btn" style="width:30px;height:30px" data-copy-fact="${o}" aria-label="Copy fact">${n.copy}</button></span>
               </div>`).join("")}
           </div>
 
-          ${s?`
+          ${a?`
           <hr class="section-rule" />
           <div>
             ${c("Linked person")}
-            ${g({avatar:s.initials,title:s.name,sub:s.role,go:`person:${t.person}`})}
+            ${g({avatar:a.initials,title:a.name,sub:a.role,go:`person:${t.person}`})}
           </div>`:""}
 
           <hr class="section-rule" />
           <div>
             ${c("Mentioned with")}
-            ${g({icon:o.quote,title:"Design review with Maya",sub:"Memory \xB7 3:41 PM today",go:"memory:m1"})}
+            ${g({icon:n.quote,title:"Design review with Maya",sub:"Memory \xB7 3:41 PM today",go:"memory:m1"})}
           </div>
         </div>
         ${f()}
       </div>
-      ${M("Update")}`,onMount:a=>{a.addEventListener("click",i=>{let n=i.target.closest("[data-copy-fact]");if(!n)return;let l=Number(n.dataset.copyFact);navigator.clipboard?.writeText(t.facts[l]).catch(()=>{}),n.innerHTML=o.check,setTimeout(()=>n.innerHTML=o.copy,1200)})}}}});function be(e){return`<div style="height:6px;border-radius:3px;background:var(--accent-softer);margin-top:10px;overflow:hidden">
+      ${M("Update")}`,onMount:s=>{s.addEventListener("click",o=>{let i=o.target.closest("[data-copy-fact]");if(!i)return;let l=Number(i.dataset.copyFact);navigator.clipboard?.writeText(t.facts[l]).catch(()=>{}),i.innerHTML=n.check,setTimeout(()=>i.innerHTML=n.copy,1200)})}}}});function be(e){return`<div style="height:6px;border-radius:3px;background:var(--accent-softer);margin-top:10px;overflow:hidden">
     <div style="height:100%;width:${e}%;background:var(--accent);border-radius:3px"></div>
-  </div>`}var Ve=[{dow:"MON",num:28},{dow:"TUE",num:29},{dow:"WED",num:30},{dow:"THU",num:31},{dow:"FRI",num:1,on:!0},{dow:"SAT",num:2},{dow:"SUN",num:3}];function Je(){return`<div class="day-strip">
-    ${Ve.map(e=>`<div class="day-cell ${e.on?"on":""}">
+  </div>`}var _e=[{dow:"MON",num:28},{dow:"TUE",num:29},{dow:"WED",num:30},{dow:"THU",num:31},{dow:"FRI",num:1,on:!0},{dow:"SAT",num:2},{dow:"SUN",num:3}];function Ke(){return`<div class="day-strip">
+    ${_e.map(e=>`<div class="day-cell ${e.on?"on":""}">
           <div class="dc-dow">${e.dow}</div>
           <div class="dc-num mono">${e.num}</div>
         </div>`).join("")}
-  </div>`}var _e=e=>[0,1,2,3,4][Math.floor((e+1)*.7548776662%1*5)];function Ke(e,t=30){let s="";for(let a=0;a<t;a++){let i=_e(a+e);s+=`<i class="${i?`l${i}`:""}"></i>`}return`<div class="heatmap">${s}</div>`}function Qe(){return`<div style="display:flex;align-items:center;gap:8px;margin-top:14px">
+  </div>`}var Qe=e=>[0,1,2,3,4][Math.floor((e+1)*.7548776662%1*5)];function Ze(e,t=30){let a="";for(let s=0;s<t;s++){let o=Qe(s+e);a+=`<i class="${o?`l${o}`:""}"></i>`}return`<div class="heatmap">${a}</div>`}function Xe(){return`<div style="display:flex;align-items:center;gap:8px;margin-top:14px">
     <span class="micro">Less</span>
     <div class="heatmap" style="display:inline-grid;grid-auto-flow:row;grid-template-rows:none;grid-template-columns:repeat(5,10px);width:auto;gap:4px">
       <i></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i>
     </div>
     <span class="micro">More</span>
-  </div>`}p("meals",{kind:"push",render:()=>({html:`
-    ${h("Meals",{back:!0,actions:$(o.camera,'data-go="capture"',"Log meal with a photo")})}
+  </div>`}u("meals",{kind:"push",render:()=>({html:`
+    ${h("Meals",{back:!0,actions:$(n.camera,'data-go="capture"',"Log meal with a photo")})}
     <div class="screen-body">
       <div class="stagger">
         <div class="hero-card">
@@ -2276,7 +2411,7 @@ svg {
           ${be(Math.round(b.kcalIn/b.kcalGoal*100))}
         </div>
 
-        <div style="margin-top:20px">${Je()}</div>
+        <div style="margin-top:20px">${Ke()}</div>
 
         <hr class="section-rule" />
         <div>
@@ -2292,13 +2427,13 @@ svg {
         </div>
 
         <div class="card" style="margin-top:20px;display:flex;flex-direction:column;gap:8px">
-          <span class="badge sky-badge" style="align-self:flex-start">${o.sparkles} Photo estimate</span>
+          <span class="badge sky-badge" style="align-self:flex-start">${n.sparkles} Photo estimate</span>
           <div class="meta" style="line-height:1.4">Snap a meal photo \u2014 calories and macros estimated on device.</div>
           <button class="cta-quiet" style="align-self:flex-start" data-go="capture">Try it</button>
         </div>
         ${f()}
       </div>
-    </div>`})});p("workouts",{kind:"push",render:()=>({html:`
+    </div>`})});u("workouts",{kind:"push",render:()=>({html:`
     ${h("Workouts",{back:!0})}
     <div class="screen-body">
       <div class="stagger">
@@ -2336,7 +2471,7 @@ svg {
         </div>
         ${f()}
       </div>
-    </div>`,onMount:e=>{e.addEventListener("click",t=>{let s=t.target.closest("[data-conflict]");if(!s)return;let a=s.closest("[data-conflict-card]");if(!a)return;let i=s.dataset.conflict==="health"?"Apple Health":"the voice log";a.querySelector(".cf-title").textContent=`Resolved \u2014 kept ${i}`,a.querySelector(".micro").textContent="You can change this any time from the item.",a.querySelectorAll("[data-conflict]").forEach(n=>n.remove())})}})});p("expenses",{kind:"push",render:()=>({html:`
+    </div>`,onMount:e=>{e.addEventListener("click",t=>{let a=t.target.closest("[data-conflict]");if(!a)return;let s=a.closest("[data-conflict-card]");if(!s)return;let o=a.dataset.conflict==="health"?"Apple Health":"the voice log";s.querySelector(".cf-title").textContent=`Resolved \u2014 kept ${o}`,s.querySelector(".micro").textContent="You can change this any time from the item.",s.querySelectorAll("[data-conflict]").forEach(i=>i.remove())})}})});u("expenses",{kind:"push",render:()=>({html:`
     ${h("Expenses",{back:!0})}
     <div class="screen-body">
       <div class="stagger">
@@ -2365,8 +2500,8 @@ svg {
         </div>
         ${f()}
       </div>
-    </div>`})});var Ze=[{title:"Move 30 min",count:12},{title:"Log every meal",count:8},{title:"Capture daily",count:21}];p("streaks",{kind:"push",render:()=>({html:`
-    ${h("Streaks",{back:!0,actions:$(o.gear,'data-go="settings"',"Settings")})}
+    </div>`})});var et=[{title:"Move 30 min",count:12},{title:"Log every meal",count:8},{title:"Capture daily",count:21}];u("streaks",{kind:"push",render:()=>({html:`
+    ${h("Streaks",{back:!0,actions:$(n.gear,'data-go="settings"',"Settings")})}
     <div class="screen-body">
       <div class="stagger">
         <div class="pill-row" id="zoom-pills">
@@ -2375,15 +2510,15 @@ svg {
           <button class="pill" data-zoom="1y">1Y</button>
         </div>
 
-        ${Ze.map((e,t)=>`<div style="${t>0?"margin-top:26px":""}">
+        ${et.map((e,t)=>`<div style="${t>0?"margin-top:26px":""}">
               ${c(e.title)}
               <div class="mono" style="font-size:15px;font-weight:650;margin:2px 0 10px">${e.count} day streak</div>
-              ${Ke(t*30)}
+              ${Ze(t*30)}
             </div>`).join("")}
-        ${Qe()}
+        ${Xe()}
         ${f()}
       </div>
-    </div>`,onMount:e=>{let t=e.querySelector("#zoom-pills");t.addEventListener("click",s=>{let a=s.target.closest("[data-zoom]");a&&t.querySelectorAll(".pill").forEach(i=>i.classList.toggle("on",i===a))})}})});p("logitem",{kind:"push",render:()=>({html:`
+    </div>`,onMount:e=>{let t=e.querySelector("#zoom-pills");t.addEventListener("click",a=>{let s=a.target.closest("[data-zoom]");s&&t.querySelectorAll(".pill").forEach(o=>o.classList.toggle("on",o===s))})}})});u("logitem",{kind:"push",render:()=>({html:`
     ${h("Log item",{back:!0})}
     <div class="screen-body">
       <div class="stagger">
@@ -2402,14 +2537,14 @@ svg {
 
         <div style="margin-top:22px">
           ${c("Source")}
-          ${g({icon:o.quote,title:"From: Design review capture",sub:"3:41 PM",go:"memory:m1"})}
+          ${g({icon:n.quote,title:"From: Design review capture",sub:"3:41 PM",go:"memory:m1"})}
         </div>
       </div>
     </div>
-    ${M("Update")}`})});var Xe=`<span class="chip-btn" style="background:var(--sky-soft);border-color:var(--sky-line);color:var(--sky);pointer-events:none">${o.shield}</span>`;function le(e){return`<button class="row" data-copy-row>
-    <span class="row-icon">${o.copy}</span>
+    ${M("Update")}`})});var tt=`<span class="chip-btn" style="background:var(--sky-soft);border-color:var(--sky-line);color:var(--sky);pointer-events:none">${n.shield}</span>`;function le(e){return`<button class="row" data-copy-row>
+    <span class="row-icon">${n.copy}</span>
     <span class="row-main"><span class="row-title">${e}</span></span>
-  </button>`}function et(){return`
+  </button>`}function st(){return`
     <div class="kbd-config">{
   "mcpServers": {
     "context": {
@@ -2423,7 +2558,7 @@ svg {
       ${le("Copy server URL")}
       ${le("Copy key")}
     </div>
-    <button class="cta-quiet" style="margin-top:14px" data-go="agent-scope">Choose collections &amp; folders</button>`}function tt(e){return`<div class="card" style="margin-top:12px" data-agent="${e.id}">
+    <button class="cta-quiet" style="margin-top:14px" data-go="agent-scope">Choose collections &amp; folders</button>`}function at(e){return`<div class="card" style="margin-top:12px" data-agent="${e.id}">
     <div style="display:flex;align-items:center;gap:12px">
       <span class="avatar">${e.glyph}</span>
       <div style="flex:1;min-width:0">
@@ -2442,14 +2577,14 @@ svg {
     </div>
     <div class="micro" style="margin-top:10px;line-height:1.4">Deletes are off by default. All data stays end-to-end encrypted.</div>
     <button class="text-btn" style="color:var(--bad);margin-top:6px;padding:8px 0" data-revoke="${e.id}">Revoke</button>
-  </div>`}p("agents",{kind:"push",render:()=>({html:`
-    ${h("Agent access",{back:!0,actions:Xe})}
+  </div>`}u("agents",{kind:"push",render:()=>({html:`
+    ${h("Agent access",{back:!0,actions:tt})}
     <div class="screen-body">
       <div class="stagger">
         <div>
           <h1 class="display" style="margin-top:4px">Private access, collection by collection.</h1>
           <p class="body" style="margin-top:10px">Pair Claude, ChatGPT, Cursor, or any MCP agent. A new pairing can read nothing until you choose what it may access.</p>
-          <span class="badge sky-badge" style="margin-top:14px">${o.shield} Zero readable context by default</span>
+          <span class="badge sky-badge" style="margin-top:14px">${n.shield} Zero readable context by default</span>
         </div>
 
         <hr class="section-rule" />
@@ -2465,22 +2600,22 @@ svg {
         <hr class="section-rule" />
         <div>
           ${c("Paired connections")}
-          ${ae.map(tt).join("")}
+          ${ae.map(at).join("")}
         </div>
       </div>
-    </div>`,onMount:e=>{let t=e.querySelector("#pair-result");e.addEventListener("click",s=>{if(s.target.closest("[data-pair-create]")){if(t.dataset.done)return;t.dataset.done="1",t.innerHTML=et();return}let a=s.target.closest("[data-copy-row]");if(a){let l=a.querySelector(".row-title"),r=l.dataset.orig||l.textContent;l.dataset.orig=r,l.textContent="Copied \u2713",setTimeout(()=>{l.isConnected&&(l.textContent=r)},1200);return}let i=s.target.closest("[data-toggle]");if(i){i.classList.toggle("on"),i.setAttribute("aria-checked",String(i.classList.contains("on")));return}let n=s.target.closest("[data-revoke]");if(n){let l=ae.find(r=>r.id===n.dataset.revoke)?.label||"This agent";A(`
+    </div>`,onMount:e=>{let t=e.querySelector("#pair-result");e.addEventListener("click",a=>{if(a.target.closest("[data-pair-create]")){if(t.dataset.done)return;t.dataset.done="1",t.innerHTML=st();return}let s=a.target.closest("[data-copy-row]");if(s){let l=s.querySelector(".row-title"),r=l.dataset.orig||l.textContent;l.dataset.orig=r,l.textContent="Copied \u2713",setTimeout(()=>{l.isConnected&&(l.textContent=r)},1200);return}let o=a.target.closest("[data-toggle]");if(o){o.classList.toggle("on"),o.setAttribute("aria-checked",String(o.classList.contains("on")));return}let i=a.target.closest("[data-revoke]");if(i){let l=ae.find(r=>r.id===i.dataset.revoke)?.label||"This agent";z(`
             <div>
               <h2 class="title">Revoke this connection?</h2>
               <p class="meta" style="margin-top:8px;line-height:1.45">${l} will immediately lose access to your context. You'll need to create a new pairing to reconnect it.</p>
               <button class="cta" style="margin-top:20px;background:var(--bad)" data-sheet-close>Revoke</button>
               <button class="text-btn" style="width:100%;text-align:center;margin-top:6px" data-sheet-close>Cancel</button>
-            </div>`);return}})}})});function P(e,t,s,a){return`<div class="row" style="cursor:default">
+            </div>`);return}})}})});function P(e,t,a,s){return`<div class="row" style="cursor:default">
     <span class="row-main">
       <span class="row-title">${e}</span>
       ${t?`<span class="row-sub" style="white-space:normal;overflow:visible">${t}</span>`:""}
     </span>
-    <span class="row-end">${T(s,`data-toggle="${a}"`)}</span>
-  </div>`}var st=[{id:"1d",label:"1 day"},{id:"3d",label:"3 days"},{id:"7d",label:"7 days"}];p("agent-scope",{kind:"push",render:()=>({html:`
+    <span class="row-end">${T(a,`data-toggle="${s}"`)}</span>
+  </div>`}var ot=[{id:"1d",label:"1 day"},{id:"3d",label:"3 days"},{id:"7d",label:"7 days"}];u("agent-scope",{kind:"push",render:()=>({html:`
     ${h("Collections & folders",{back:!0})}
     <div class="screen-body">
       <div class="stagger">
@@ -2510,7 +2645,7 @@ svg {
         <div>
           ${c("Retention")}
           <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
-            ${st.map(e=>`<button class="radio-card ${e.id==="3d"?"selected":""}" data-ret="${e.id}">
+            ${ot.map(e=>`<button class="radio-card ${e.id==="3d"?"selected":""}" data-ret="${e.id}">
                   <span class="radio-dot"></span>
                   <span style="font-size:15px;font-weight:650">${e.label}</span>
                 </button>`).join("")}
@@ -2520,12 +2655,12 @@ svg {
         <p class="micro" style="margin-top:22px;line-height:1.5;text-align:center">Turning a collection off removes it from the cloud on next sync. Local copies are untouched.</p>
         <button class="cta" style="margin-top:20px" data-nav="back">Save access</button>
       </div>
-    </div>`,onMount:e=>{e.addEventListener("click",t=>{let s=t.target.closest("[data-toggle]");if(s){s.classList.toggle("on"),s.setAttribute("aria-checked",String(s.classList.contains("on")));return}let a=t.target.closest("[data-ret]");a&&e.querySelectorAll("[data-ret]").forEach(i=>i.classList.toggle("selected",i===a))})}})});function at(e){return`<div style="height:6px;border-radius:3px;background:var(--accent-softer);margin-top:10px;overflow:hidden">
+    </div>`,onMount:e=>{e.addEventListener("click",t=>{let a=t.target.closest("[data-toggle]");if(a){a.classList.toggle("on"),a.setAttribute("aria-checked",String(a.classList.contains("on")));return}let s=t.target.closest("[data-ret]");s&&e.querySelectorAll("[data-ret]").forEach(o=>o.classList.toggle("selected",o===s))})}})});function nt(e){return`<div style="height:6px;border-radius:3px;background:var(--accent-softer);margin-top:10px;overflow:hidden">
     <div style="height:100%;width:${e}%;background:var(--accent);border-radius:3px"></div>
-  </div>`}p("paywall",{kind:"cover",render:()=>({html:`
+  </div>`}u("paywall",{kind:"cover",render:()=>({html:`
     <div class="ctx-header">
       <span style="flex:1"></span>
-      <button class="chip-btn" data-nav="back" aria-label="Close">${o.x}</button>
+      <button class="chip-btn" data-nav="back" aria-label="Close">${n.x}</button>
     </div>
     <div class="screen-body" style="padding-bottom:200px">
       <div class="stagger" style="text-align:center">
@@ -2555,9 +2690,9 @@ svg {
         </div>
 
         <div style="margin-top:22px;text-align:left">
-          ${g({icon:o.sparkles,title:"Unlimited use \u2014 captures and grounded Ask turns",chev:!1})}
-          ${g({icon:o.shield,title:"Connected agents & sync \u2014 share only selected collections",chev:!1})}
-          ${g({icon:o.wand,title:"Advanced intelligence \u2014 premium models and richer answers",chev:!1})}
+          ${g({icon:n.sparkles,title:"Unlimited use \u2014 captures and grounded Ask turns",chev:!1})}
+          ${g({icon:n.shield,title:"Connected agents & sync \u2014 share only selected collections",chev:!1})}
+          ${g({icon:n.wand,title:"Advanced intelligence \u2014 premium models and richer answers",chev:!1})}
         </div>
       </div>
     </div>
@@ -2565,7 +2700,7 @@ svg {
       <button class="cta" id="paywall-cta">Start 7-Day Free Trial</button>
       <p class="micro center" style="margin-top:10px;line-height:1.4">7 days free, then $99.99 per year. Auto-renews until cancelled.</p>
       <button class="text-btn" style="display:block;width:100%;text-align:center;margin-top:2px">Restore Purchases</button>
-    </div>`,onMount:e=>{e.addEventListener("click",t=>{let s=t.target.closest("[data-plan]");s&&e.querySelectorAll("[data-plan]").forEach(a=>a.classList.toggle("selected",a===s))})}})});p("settings",{kind:"push",render:()=>{let e=document.documentElement.dataset.theme==="dark"||!document.documentElement.dataset.theme&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;return{html:`
+    </div>`,onMount:e=>{e.addEventListener("click",t=>{let a=t.target.closest("[data-plan]");a&&e.querySelectorAll("[data-plan]").forEach(s=>s.classList.toggle("selected",s===a))})}})});u("settings",{kind:"push",render:()=>{let e=document.documentElement.dataset.theme==="dark"||!document.documentElement.dataset.theme&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;return{html:`
     ${h("Settings",{back:!0})}
     <div class="screen-body">
       <div class="stagger">
@@ -2581,37 +2716,37 @@ svg {
         <hr class="section-rule" />
         <div>
           ${c("Context")}
-          ${g({icon:o.person,title:"Profile & Plan",sub:"Name, allowance, subscription",go:"paywall"})}
-          ${g({icon:o.lock,title:"Privacy & Processing",sub:"Local or cloud, app lock",go:"settings-privacy"})}
-          ${g({icon:o.wand,title:"AI Models",sub:"Parakeet + on-device Qwen",go:"settings-models"})}
+          ${g({icon:n.person,title:"Profile & Plan",sub:"Name, allowance, subscription",go:"paywall"})}
+          ${g({icon:n.lock,title:"Privacy & Processing",sub:"Local or cloud, app lock",go:"settings-privacy"})}
+          ${g({icon:n.wand,title:"AI Models",sub:"Parakeet + on-device Qwen",go:"settings-models"})}
         </div>
 
         <hr class="section-rule" />
         <div>
           ${c("Control")}
-          ${g({icon:o.shield,title:"Agent access",sub:"2 paired \xB7 zero default access",go:"agents"})}
-          ${g({icon:o.folder,title:"Data & Audio",sub:"Export, import, 30-day audio retention",go:""})}
-          ${g({icon:o.mic,title:"Capture",sub:"Microphone ready",go:""})}
+          ${g({icon:n.shield,title:"Agent access",sub:"2 paired \xB7 zero default access",go:"agents"})}
+          ${g({icon:n.folder,title:"Data & Audio",sub:"Export, import, 30-day audio retention",go:""})}
+          ${g({icon:n.mic,title:"Capture",sub:"Microphone ready",go:""})}
         </div>
 
         <hr class="section-rule" />
         <div>
           ${c("App")}
           <div class="row" style="cursor:default">
-            <span class="row-icon">${o.moon}</span>
+            <span class="row-icon">${n.moon}</span>
             <span class="row-main">
               <span class="row-title">Appearance</span>
               <span class="row-sub">Theme, Home sections</span>
             </span>
             <span class="row-end">${T(e,'data-toggle="theme"')}</span>
           </div>
-          ${g({icon:o.info,title:"Help & feedback",sub:"Support, diagnostics",go:""})}
+          ${g({icon:n.info,title:"Help & feedback",sub:"Support, diagnostics",go:""})}
         </div>
 
         <p class="micro" style="margin-top:26px;line-height:1.5;text-align:center">Your context database and original audio stay on this device. Cloud-assisted processing sends only what the feature needs. Agent access is controlled separately.</p>
         <p class="micro center" style="margin-top:10px">Version 2.0 (prototype)</p>
       </div>
-    </div>`,onMount:t=>{t.addEventListener("click",s=>{let a=s.target.closest('[data-toggle="theme"]');if(!a)return;let i=!a.classList.contains("on");document.documentElement.dataset.theme=i?"dark":"light",a.classList.toggle("on",i),a.setAttribute("aria-checked",String(i))})}}}});p("settings-privacy",{kind:"push",render:()=>({html:`
+    </div>`,onMount:t=>{t.addEventListener("click",a=>{let s=a.target.closest('[data-toggle="theme"]');if(!s)return;let o=!s.classList.contains("on");document.documentElement.dataset.theme=o?"dark":"light",s.classList.toggle("on",o),s.setAttribute("aria-checked",String(o))})}}}});u("settings-privacy",{kind:"push",render:()=>({html:`
     ${h("Privacy & Processing",{back:!0})}
     <div class="screen-body">
       <div class="stagger">
@@ -2646,11 +2781,11 @@ svg {
         <div>
           ${c("Allowance")}
           <div class="meta" style="margin-top:4px">AI cleanups today \u2014 3 of 5 used</div>
-          ${at(60)}
+          ${nt(60)}
         </div>
         ${f()}
       </div>
-    </div>`,onMount:e=>{e.addEventListener("click",t=>{let s=t.target.closest("[data-toggle]");s&&(s.classList.toggle("on"),s.setAttribute("aria-checked",String(s.classList.contains("on"))))})}})});p("settings-models",{kind:"push",render:()=>({html:`
+    </div>`,onMount:e=>{e.addEventListener("click",t=>{let a=t.target.closest("[data-toggle]");a&&(a.classList.toggle("on"),a.setAttribute("aria-checked",String(a.classList.contains("on"))))})}})});u("settings-models",{kind:"push",render:()=>({html:`
     ${h("AI Models",{back:!0})}
     <div class="screen-body">
       <div class="stagger">
@@ -2659,7 +2794,7 @@ svg {
           <div class="card">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
               <span style="font-size:15px;font-weight:650">Parakeet v3</span>
-              <span class="badge good-badge">${o.check} Downloaded</span>
+              <span class="badge good-badge">${n.check} Downloaded</span>
             </div>
             <div class="micro" style="margin-top:6px">Best accuracy \xB7 25 languages \xB7 runs on device</div>
           </div>
@@ -2671,7 +2806,7 @@ svg {
           <div class="card">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
               <span style="font-size:15px;font-weight:650">Apple Intelligence</span>
-              <span class="badge good-badge">${o.check} Ready</span>
+              <span class="badge good-badge">${n.check} Ready</span>
             </div>
           </div>
           <div class="card" style="margin-top:10px" id="qwen-card">
@@ -2704,8 +2839,8 @@ svg {
           </div>
         </div>
       </div>
-    </div>`,onMount:e=>{e.addEventListener("click",t=>{let s=t.target.closest("#qwen-dl");if(s&&!s.disabled){s.disabled=!0,s.textContent="Downloading\u2026",setTimeout(()=>{let i=e.querySelector("#qwen-card");!i||!i.isConnected||(i.querySelector("div").innerHTML=`<span style="font-size:15px;font-weight:650">Qwen 2.5 (1.9 GB)</span><span class="badge good-badge">${o.check} Downloaded</span>`)},1400);return}let a=t.target.closest("[data-engine]");a&&e.querySelectorAll("[data-engine]").forEach(i=>i.classList.toggle("selected",i===a))})}})});var L=window.NOMI_FB=window.NOMI_FB||{url:"",anon:"",table:"prototype_feedback"},$e="nomiproto.fb",we="nomiproto.tester";function ot(){let e=localStorage.getItem(we);return e||(e="t-"+Math.random().toString(36).slice(2,9),localStorage.setItem(we,e)),e}function Me(){try{return JSON.parse(localStorage.getItem($e))||[]}catch{return[]}}async function Se(e){let t={tester:ot(),screen:e.screen||"\u2014",kind:e.kind,vote:e.vote??null,comment:e.comment??null,answers:e.answers??null,ua:navigator.userAgent.slice(0,120),created_at:new Date().toISOString()};if(localStorage.setItem($e,JSON.stringify([...Me(),t])),L.url&&L.anon)try{await fetch(`${L.url}/rest/v1/${L.table}`,{method:"POST",headers:{"content-type":"application/json",apikey:L.anon,authorization:`Bearer ${L.anon}`,prefer:"return=minimal"},body:JSON.stringify(t)})}catch(s){console.warn("feedback upload failed; kept locally",s)}return t}var D=null,it=new Set(["results"]);function ke(){let e=document.querySelector(".phone");D?.remove(),D=null;let t=R();!t||it.has(t.route)||t.route.startsWith("onb-")||(D=document.createElement("button"),D.className="fb-chip",D.innerHTML=`${o.sparkles}<span>Feedback</span>`,D.addEventListener("click",()=>nt(t.route)),e.appendChild(D))}function nt(e){let t=null,s=A(`
-    <div class="sheet-title-row">
+    </div>`,onMount:e=>{e.addEventListener("click",t=>{let a=t.target.closest("#qwen-dl");if(a&&!a.disabled){a.disabled=!0,a.textContent="Downloading\u2026",setTimeout(()=>{let o=e.querySelector("#qwen-card");!o||!o.isConnected||(o.querySelector("div").innerHTML=`<span style="font-size:15px;font-weight:650">Qwen 2.5 (1.9 GB)</span><span class="badge good-badge">${n.check} Downloaded</span>`)},1400);return}let s=t.target.closest("[data-engine]");s&&e.querySelectorAll("[data-engine]").forEach(o=>o.classList.toggle("selected",o===s))})}})});var L=window.NOMI_FB=window.NOMI_FB||{url:"",anon:"",table:"prototype_feedback"},Me="nomiproto.fb",we="nomiproto.tester";function it(){let e=localStorage.getItem(we);return e||(e="t-"+Math.random().toString(36).slice(2,9),localStorage.setItem(we,e)),e}function Se(){try{return JSON.parse(localStorage.getItem(Me))||[]}catch{return[]}}async function Le(e){let t={tester:it(),screen:e.screen||"\u2014",kind:e.kind,vote:e.vote??null,comment:e.comment??null,answers:e.answers??null,ua:navigator.userAgent.slice(0,120),created_at:new Date().toISOString()};if(localStorage.setItem(Me,JSON.stringify([...Se(),t])),L.url&&L.anon)try{await fetch(`${L.url}/rest/v1/${L.table}`,{method:"POST",headers:{"content-type":"application/json",apikey:L.anon,authorization:`Bearer ${L.anon}`,prefer:"return=minimal"},body:JSON.stringify(t)})}catch(a){console.warn("feedback upload failed; kept locally",a)}return t}var D=null,ke=new Set(["results"]);function $e(){let e=N(),t=!e||ke.has(e.route);D||(D=document.createElement("button"),D.className="fb-tab",D.innerHTML=`${n.sparkles}<span>Feedback</span>`,D.addEventListener("click",()=>{let a=N();a&&!ke.has(a.route)&&lt(a.route)}),document.body.appendChild(D)),D.style.display=t?"none":""}function lt(e){if(document.querySelector(".fb-panel"))return;let t=null,a=document.createElement("div");a.className="fb-panel-backdrop";let s=document.createElement("aside");s.className="fb-panel",s.innerHTML=`
+    <div class="fb-panel-head">
       <span class="title">This screen</span>
       <span class="mono-chip">${e}</span>
     </div>
@@ -2713,49 +2848,57 @@ svg {
       <button data-vote="up">\u{1F44D}</button>
       <button data-vote="down">\u{1F44E}</button>
     </div>
-    <textarea class="fb-input" id="fb-comment" placeholder="What works? What\u2019s confusing? Be blunt." style="margin-top:12px"></textarea>
-    <button class="cta" data-fb-send style="margin-top:14px">Send</button>`);s.el.addEventListener("click",async a=>{let i=a.target.closest("[data-vote]");if(i&&(t=i.dataset.vote,s.el.querySelectorAll("[data-vote]").forEach(n=>n.classList.toggle("picked",n===i))),a.target.closest("[data-fb-send]")){let n=s.el.querySelector("#fb-comment").value.trim();if(!t&&!n)return s.close();await Se({kind:"screen",screen:e,vote:t,comment:n}),s.el.innerHTML=`<div class="center" style="padding:26px 10px">
+    <textarea class="fb-input" id="fb-comment" placeholder="What works? What\u2019s confusing? Be blunt."></textarea>
+    <button class="cta" data-fb-send>Send</button>
+    <p class="micro center">Tagged with the screen you\u2019re on. Goes straight to the maker.</p>`,document.body.appendChild(a),document.body.appendChild(s);let o=()=>{a.remove(),s.remove(),document.removeEventListener("keydown",i)},i=l=>{l.key==="Escape"&&o()};document.addEventListener("keydown",i),a.addEventListener("click",o),s.addEventListener("click",async l=>{let r=l.target.closest("[data-vote]");if(r&&(t=r.dataset.vote,s.querySelectorAll("[data-vote]").forEach(p=>p.classList.toggle("picked",p===r))),l.target.closest("[data-fb-send]")){let p=s.querySelector("#fb-comment").value.trim();if(!t&&!p)return o();await Le({kind:"screen",screen:e,vote:t,comment:p}),s.innerHTML=`<div class="center" style="padding:26px 10px">
         ${v({size:56,pose:"happy",heart:.85})}
         <div class="title" style="margin-top:12px">Got it \u2014 thank you.</div>
-      </div>`,setTimeout(s.close,1100)}})}var U=[{id:"use",q:"Would you actually use this?",opts:["Yes, today","Maybe \u2014 depends","Probably not"]},{id:"confusing",q:"Which flow felt most confusing?",opts:["Capture","Ask","Graph","Recorder","Tasks","Agents","None"]},{id:"name",q:"Which name would you search the App Store for?",opts:[x.agent,x.company,"Neither sticks"]},{id:"remove",q:"One thing you\u2019d remove?",opts:null}];function Le(){let e={},t=0,s=A('<div id="survey-host"></div>'),a=s.el.querySelector("#survey-host"),i=()=>{if(t>=U.length){Se({kind:"survey",screen:"exit-survey",answers:e}),a.innerHTML=`<div class="center" style="padding:26px 10px">
+      </div>`,setTimeout(o,1100)}}),s.querySelector("#fb-comment").focus()}var U=[{id:"use",q:"Would you actually use this?",opts:["Yes, today","Maybe \u2014 depends","Probably not"]},{id:"confusing",q:"Which flow felt most confusing?",opts:["Capture","Ask","Graph","Recorder","Tasks","Agents","None"]},{id:"name",q:"Which name would you search the App Store for?",opts:[x.agent,x.company,"Neither sticks"]},{id:"remove",q:"One thing you\u2019d remove?",opts:null}];function Ce(){let e={},t=0,a=z('<div id="survey-host"></div>'),s=a.el.querySelector("#survey-host"),o=()=>{if(t>=U.length){Le({kind:"survey",screen:"exit-survey",answers:e}),s.innerHTML=`<div class="center" style="padding:26px 10px">
         ${v({size:64,pose:"happy",heart:.95})}
         <div class="title" style="margin-top:14px">That\u2019s everything.</div>
         <p class="meta" style="margin-top:8px">Your notes went straight to the maker. Keep exploring as long as you like.</p>
         <button class="cta" data-sheet-close style="margin-top:18px">Done</button>
-      </div>`;return}let n=U[t];a.innerHTML=`
+      </div>`;return}let i=U[t];s.innerHTML=`
       <div class="eyebrow">Question ${t+1} of ${U.length}</div>
-      <div class="title" style="margin-top:8px">${n.q}</div>
-      ${n.opts?`<div style="display:flex;flex-direction:column;gap:9px;margin-top:16px">
-              ${n.opts.map(l=>`<button class="radio-card" data-opt="${l}"><span class="radio-dot"></span><span style="font-size:15px;font-weight:600">${l}</span></button>`).join("")}
+      <div class="title" style="margin-top:8px">${i.q}</div>
+      ${i.opts?`<div style="display:flex;flex-direction:column;gap:9px;margin-top:16px">
+              ${i.opts.map(l=>`<button class="radio-card" data-opt="${l}"><span class="radio-dot"></span><span style="font-size:15px;font-weight:600">${l}</span></button>`).join("")}
             </div>`:`<textarea class="fb-input" id="survey-free" style="margin-top:16px" placeholder="One thing\u2026"></textarea>
-             <button class="cta" data-opt-free style="margin-top:14px">Finish</button>`}`};s.el.addEventListener("click",n=>{let l=n.target.closest("[data-opt]");l&&(e[U[t].id]=l.dataset.opt,t++,i()),n.target.closest("[data-opt-free]")&&(e[U[t].id]=s.el.querySelector("#survey-free").value.trim()||"\u2014",t++,i())}),i()}p("results",{kind:"push",render:()=>({html:`${h("Feedback",{back:!0})}
-      <div class="screen-body" id="results-body"><p class="meta">Loading\u2026</p></div>`,onMount:async e=>{let t=e.querySelector("#results-body"),s=Me();if(L.url&&L.anon){let i=sessionStorage.getItem("nomiproto.ownerkey")||prompt("Owner key");if(i){sessionStorage.setItem("nomiproto.ownerkey",i);try{let n=await fetch(`${L.url}/rest/v1/rpc/get_prototype_feedback`,{method:"POST",headers:{"content-type":"application/json",apikey:L.anon,authorization:`Bearer ${L.anon}`},body:JSON.stringify({owner_key:i})});n.ok?s=await n.json():t.innerHTML=`<p class="meta">Couldn\u2019t unlock results (${n.status}). Showing this device only.</p>`}catch{}}}let a=i=>`
+             <button class="cta" data-opt-free style="margin-top:14px">Finish</button>`}`};a.el.addEventListener("click",i=>{let l=i.target.closest("[data-opt]");l&&(e[U[t].id]=l.dataset.opt,t++,o()),i.target.closest("[data-opt-free]")&&(e[U[t].id]=a.el.querySelector("#survey-free").value.trim()||"\u2014",t++,o())}),o()}u("results",{kind:"push",render:()=>({html:`${h("Feedback",{back:!0})}
+      <div class="screen-body" id="results-body"><p class="meta">Loading\u2026</p></div>`,onMount:async e=>{let t=e.querySelector("#results-body"),a=Se();if(L.url&&L.anon){let o=sessionStorage.getItem("nomiproto.ownerkey")||prompt("Owner key");if(o){sessionStorage.setItem("nomiproto.ownerkey",o);try{let i=await fetch(`${L.url}/rest/v1/rpc/get_prototype_feedback`,{method:"POST",headers:{"content-type":"application/json",apikey:L.anon,authorization:`Bearer ${L.anon}`},body:JSON.stringify({owner_key:o})});i.ok?a=await i.json():t.innerHTML=`<p class="meta">Couldn\u2019t unlock results (${i.status}). Showing this device only.</p>`}catch{}}}let s=o=>`
         <div class="card" style="margin-bottom:10px">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <span class="mono-chip">${i.screen}</span>
-            <span class="micro">${(i.created_at||"").slice(0,16).replace("T"," ")} \xB7 ${i.tester}</span>
+            <span class="mono-chip">${o.screen}</span>
+            <span class="micro">${(o.created_at||"").slice(0,16).replace("T"," ")} \xB7 ${o.tester}</span>
           </div>
-          ${i.vote?`<div style="margin-top:8px;font-size:15px">${i.vote==="up"?"\u{1F44D}":"\u{1F44E}"}</div>`:""}
-          ${i.comment?`<div class="body" style="margin-top:6px">${i.comment}</div>`:""}
-          ${i.answers?`<div class="meta" style="margin-top:6px;line-height:1.6">${Object.entries(i.answers).map(([n,l])=>`<b>${n}:</b> ${l}`).join("<br/>")}</div>`:""}
-        </div>`;t.innerHTML=s.length?`<p class="meta" style="margin-bottom:12px">${s.length} responses</p>`+s.slice().reverse().map(a).join(""):'<p class="meta">No feedback yet.</p>'}})});function Ce(){let e=document.getElementById("screen-host");new MutationObserver(()=>ke()).observe(e,{childList:!0}),ke()}var q=[{name:"Home",steps:[{route:"home",prompt:"This is your day, written by "+x.agent+". Scroll it, then hit Next."}]},{name:"Capture",steps:[{route:"capture",prompt:"Speak-anything capture. Tap Stop to see what it becomes."}]},{name:"All-day recorder",steps:[{route:"recorder",prompt:"Always on, meeting to meeting \u2014 every stop already captured."}]},{name:"Ask",steps:[{route:"ask",prompt:"Ask a question \u2014 try one of the suggestions."}]},{name:"Memories",steps:[{route:"memories",prompt:"Everything you capture lands here. Open one."}]},{name:"The graph",steps:[{route:"graph",prompt:"Your people, meetings, logs and documents \u2014 one graph, on device."}]},{name:"Tasks",steps:[{route:"tasks",prompt:"Tasks with states, priorities and projects. Open one."}]},{name:"People",steps:[{route:"people",prompt:"Names become profiles. Open Maya."}]},{name:"Documents",steps:[{route:"docs",prompt:"Files read into your context. Open the launch brief."}]},{name:"Tracking",steps:[{route:"meals",prompt:"Meals, workouts, expenses \u2014 logged by voice."},{route:"streaks",prompt:"And the streaks they build."}]},{name:"Agent access",steps:[{route:"agents",prompt:"Pair Claude or ChatGPT. Zero readable context by default."}]},{name:"Pro",steps:[{route:"paywall",prompt:"Last stop \u2014 the plan screen. Then tell us what you think."}]}],Te="nomiproto.tour",m={active:!1,flow:0,step:0,done:!1,offered:!1};try{m={...m,...JSON.parse(localStorage.getItem(Te))||{}}}catch{}var I=()=>localStorage.setItem(Te,JSON.stringify(m)),O=null;function V(){let e=document.querySelector(".phone");if(O?.remove(),O=null,!m.active)return;let t=q[m.flow];if(!t)return;let s=t.steps[m.step];O=document.createElement("div"),O.className="tour-strip",O.innerHTML=`
+          ${o.vote?`<div style="margin-top:8px;font-size:15px">${o.vote==="up"?"\u{1F44D}":"\u{1F44E}"}</div>`:""}
+          ${o.comment?`<div class="body" style="margin-top:6px">${o.comment}</div>`:""}
+          ${o.answers?`<div class="meta" style="margin-top:6px;line-height:1.6">${Object.entries(o.answers).map(([i,l])=>`<b>${i}:</b> ${l}`).join("<br/>")}</div>`:""}
+        </div>`;t.innerHTML=a.length?`<p class="meta" style="margin-bottom:12px">${a.length} responses</p>`+a.slice().reverse().map(s).join(""):'<p class="meta">No feedback yet.</p>'}})});function Te(){let e=document.getElementById("screen-host");new MutationObserver(()=>$e()).observe(e,{childList:!0}),$e()}var q=[{name:"Home",steps:[{route:"home",prompt:"This is your day, written by "+x.agent+". Scroll it, then hit Next."}]},{name:"Capture",steps:[{route:"capture",prompt:"Speak-anything capture. Tap Stop to see what it becomes."}]},{name:"All-day recorder",steps:[{route:"recorder",prompt:"Always on, meeting to meeting \u2014 every stop already captured."}]},{name:"Ask",steps:[{route:"ask",prompt:"Ask a question \u2014 try one of the suggestions."}]},{name:"Memories",steps:[{route:"memories",prompt:"Everything you capture lands here. Open one."}]},{name:"The graph",steps:[{route:"graph",prompt:"Your people, meetings, logs and documents \u2014 one graph, on device."}]},{name:"Tasks",steps:[{route:"tasks",prompt:"Tasks with states, priorities and projects. Open one."}]},{name:"People",steps:[{route:"people",prompt:"Names become profiles. Open Maya."}]},{name:"Documents",steps:[{route:"docs",prompt:"Files read into your context. Open the launch brief."}]},{name:"Tracking",steps:[{route:"meals",prompt:"Meals, workouts, expenses \u2014 logged by voice."},{route:"streaks",prompt:"And the streaks they build."}]},{name:"Agent access",steps:[{route:"agents",prompt:"Pair Claude or ChatGPT. Zero readable context by default."}]},{name:"Pro",steps:[{route:"paywall",prompt:"Last stop \u2014 the plan screen. Then tell us what you think."}]}],Ae="nomiproto.tour",m={active:!1,flow:0,step:0,done:!1,offered:!1};try{m={...m,...JSON.parse(localStorage.getItem(Ae))||{}}}catch{}var I=()=>localStorage.setItem(Ae,JSON.stringify(m)),R=null;function V(){let e=document.querySelector(".phone");if(R?.remove(),R=null,!m.active)return;let t=q[m.flow];if(!t)return;let a=t.steps[m.step];R=document.createElement("div"),R.className="tour-strip",R.innerHTML=`
     <div class="ts-main">
       <div class="ts-flow">Flow ${m.flow+1} of ${q.length} \xB7 ${t.name}</div>
-      <div class="ts-prompt">${s.prompt}</div>
+      <div class="ts-prompt">${a.prompt}</div>
     </div>
     <button class="ts-btn" data-tour="next">Next</button>
-    <button class="ts-close" data-tour="close" aria-label="End tour">${o.x}</button>`,e.appendChild(O)}function lt(){let e=q[m.flow];if(m.step<e.steps.length-1)m.step++;else if(m.flow<q.length-1)m.flow++,m.step=0;else{m.active=!1,m.done=!0,I(),V(),Le();return}I();let t=q[m.flow].steps[m.step];R()?.route!==t.route?C(t.route):V()}function rt(){m.active=!0,m.flow=0,m.step=0,I();let e=q[0].steps[0];R()?.route!==e.route?C(e.route):V()}function ct(){if(m.offered||m.active||m.done)return;m.offered=!0,I();let e=A(`
+    <button class="ts-close" data-tour="close" aria-label="End tour">${n.x}</button>`,e.appendChild(R)}function rt(){let e=q[m.flow];if(m.step<e.steps.length-1)m.step++;else if(m.flow<q.length-1)m.flow++,m.step=0;else{m.active=!1,m.done=!0,I(),V(),Ce();return}I();let t=q[m.flow].steps[m.step];N()?.route!==t.route?C(t.route):V()}function ct(){m.active=!0,m.flow=0,m.step=0,I();let e=q[0].steps[0];N()?.route!==e.route?C(e.route):V()}function dt(){if(m.offered||m.active||m.done)return;m.offered=!0,I();let e=z(`
     <div class="center" style="padding:8px 4px 4px">
       ${v({size:64,pose:"happy",heart:.7})}
       <div class="title" style="margin-top:14px">Want the two-minute tour?</div>
       <p class="meta" style="margin-top:8px;line-height:1.5">I\u2019ll walk you through every flow \u2014 or explore freely and tap the feedback chip whenever something feels off.</p>
       <button class="cta" data-tour-start style="margin-top:20px">Show me around</button>
       <button class="text-btn" data-sheet-close style="margin-top:8px">Explore on my own</button>
-    </div>`);e.el.addEventListener("click",t=>{t.target.closest("[data-tour-start]")&&(e.close(),rt())})}function Ae(){document.addEventListener("click",e=>{let t=e.target.closest("[data-tour]");t&&(t.dataset.tour==="next"&&lt(),t.dataset.tour==="close"&&(m.active=!1,I(),V()))}),ce(e=>{if(e.route==="home"&&setTimeout(ct,700),m.active){let t=q[m.flow],s=m.step+1;if(t&&s<t.steps.length&&e.route===t.steps[s].route)m.step=s,I();else{let a=q[m.flow+1];a&&e.route===a.steps[0].route&&(m.flow++,m.step=0,I())}V()}})}var dt=document.getElementById("stage");dt.innerHTML=`
-  <div class="phone">
-    ${pe()}
-    <div id="screen-host"></div>
-  </div>`;de(document.getElementById("screen-host"));Ae();Ce();location.hash==="#results"?(C("home"),C("results")):C(location.hash==="#app"?"home":"onb-splash");})();
+    </div>`);e.el.addEventListener("click",t=>{t.target.closest("[data-tour-start]")&&(e.close(),ct())})}function ze(){document.addEventListener("click",e=>{let t=e.target.closest("[data-tour]");t&&(t.dataset.tour==="next"&&rt(),t.dataset.tour==="close"&&(m.active=!1,I(),V()))}),ce(e=>{if(e.route==="home"&&setTimeout(dt,700),m.active){let t=q[m.flow],a=m.step+1;if(t&&a<t.steps.length&&e.route===t.steps[a].route)m.step=a,I();else{let s=q[m.flow+1];s&&e.route===s.steps[0].route&&(m.flow++,m.step=0,I())}V()}})}var pt=document.getElementById("stage");pt.innerHTML=`
+  <div class="frame">
+    <span class="hw-btn hw-action"></span>
+    <span class="hw-btn hw-vol-up"></span>
+    <span class="hw-btn hw-vol-down"></span>
+    <span class="hw-btn hw-power"></span>
+    <div class="phone">
+      ${pe()}
+      <div id="screen-host"></div>
+      <div class="island"><i></i></div>
+    </div>
+  </div>`;function Ee(){let o=Math.min((window.innerHeight-36)/866,(window.innerWidth-36-44)/418);document.documentElement.style.setProperty("--phone-scale",String(Math.min(1.6,Math.max(.45,o))))}window.addEventListener("resize",Ee);Ee();de(document.getElementById("screen-host"));ze();Te();location.hash==="#results"?(C("home"),C("results")):C(location.hash==="#app"?"home":"onb-splash");})();
 </script>
 </body>
 </html>
